@@ -1,0 +1,1 @@
+Gaussian Mixture Models are probabilistic models and use the soft clustering approach for distributing the points in different clusters.
