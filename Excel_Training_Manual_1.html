@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel to Data Science: Zero to Junior Analyst</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --accent-color: #107c41; /* Excel Green */
+            --accent-hover: #0b5c30;
+            --code-bg: #e0e0e0;
+            --border-color: #ddd;
+            --quiz-bg: #e8f5e9;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --accent-color: #21a366;
+            --accent-hover: #107c41;
+            --code-bg: #2d2d2d;
+            --border-color: #444;
+            --quiz-bg: #1e2822;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header & Controls */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        h1 { margin: 0; font-size: 1.8rem; color: var(--accent-color); }
+        h2 { color: var(--accent-color); margin-top: 0; }
+        h3 { border-left: 4px solid var(--accent-color); padding-left: 10px; }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px; width: 16px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* Modules (Accordion) */
+        details {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        summary {
+            padding: 15px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2rem;
+            background-color: var(--card-bg);
+            list-style: none; /* Remove default triangle */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        summary::-webkit-details-marker { display: none; }
+        
+        summary::after {
+            content: '+';
+            font-size: 1.5rem;
+            color: var(--accent-color);
+        }
+        
+        details[open] summary::after { content: '-'; }
+        details[open] summary { border-bottom: 1px solid var(--border-color); }
+
+        .content { padding: 20px; }
+
+        /* Tags & Callouts */
+        .ds-note {
+            background-color: rgba(33, 163, 102, 0.1);
+            border-left: 4px solid var(--accent-color);
+            padding: 10px 15px;
+            margin: 15px 0;
+            font-size: 0.95rem;
+        }
+        .ds-note strong { color: var(--accent-color); }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Syntax Diagram */
+        .syntax-diagram {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .syntax-part {
+            background: var(--code-bg);
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+        .syntax-label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; text-transform: uppercase; }
+        .syntax-value { font-family: monospace; font-weight: bold; color: var(--accent-color); }
+
+        /* Interactive Elements */
+        .try-it-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        .try-it-btn:hover { background-color: var(--accent-hover); }
+
+        .hidden-task {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--code-bg);
+            border-radius: 4px;
+            border-left: 3px solid #ff9800;
+        }
+
+        /* Quiz */
+        .quiz-section {
+            margin-top: 30px;
+            background-color: var(--quiz-bg);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .quiz-question { margin-bottom: 15px; font-weight: bold; }
+        .options label { display: block; margin: 5px 0; cursor: pointer; }
+        .feedback { margin-top: 10px; font-weight: bold; }
+        .correct { color: var(--accent-color); }
+        .incorrect { color: #d32f2f; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Excel for Data Science</h1>
+            <small>Zero to Junior Analyst Bootcamp</small>
+        </div>
+        <div class="toggle-container">
+            <span>Dark Mode</span>
+            <label class="switch">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </header>
+
+    <details>
+        <summary>Module 1: The Interface & Admin Basics</summary>
+        <div class="content">
+            <h2>Ground Zero: Navigation & Setup</h2>
+            <p>Before analyzing data, you must master the environment. The Excel grid is your canvas.</p>
+            
+            <h3>1. The Anatomy</h3>
+            <ul>
+                <li><strong>Workbook:</strong> The file itself (like a notebook).</li>
+                <li><strong>Worksheet:</strong> The tabs at the bottom (pages in the notebook).</li>
+                <li><strong>Ribbon:</strong> The toolbar at the top (Home, Insert, Data tabs).</li>
+                <li><strong>Address Bar:</strong> Shows <code>A1</code>, <code>C5</code> etc.</li>
+            </ul>
+
+            <div class="ds-note">
+                <strong>Analyst Tip:</strong> Never merge cells in a raw dataset. Merged cells break Python libraries like Pandas and SQL imports. Use "Center Across Selection" instead.
+            </div>
+
+            <h3>2. Admin Tasks</h3>
+            <ul>
+                <li><strong>Freeze Panes:</strong> Keep your headers visible while scrolling (View > Freeze Panes).</li>
+                <li><strong>Printing:</strong> Set Print Area and "Fit to 1 Page" to avoid printing 100 empty columns.</li>
+                <li><strong>Formatting:</strong> Use <code>Ctrl+1</code> for the Format Cells dialog (Number, Currency, Date).</li>
+            </ul>
+
+            <button class="try-it-btn" onclick="toggleTask('task1')">Try It Yourself</button>
+            <div id="task1" class="hidden-task">
+                <strong>Task:</strong> Open a blank sheet.
+                <ol>
+                    <li>Type headers: Name, Date, Sales.</li>
+                    <li>Freeze the top row so headers stick.</li>
+                    <li>Enter <code>5000</code> in a cell and format it as Currency ($) with 0 decimals.</li>
+                </ol>
+            </div>
+
+            <div class="quiz-section">
+                <div class="quiz-question">Q: Why should you avoid merging cells in a dataset?</div>
+                <div class="options">
+                    <label><input type="radio" name="q1" value="a"> It looks ugly.</label>
+                    <label><input type="radio" name="q1" value="b"> It breaks external data tools like Python/SQL.</label>
+                    <label><input type="radio" name="q1" value="c"> You cannot print merged cells.</label>
+                </div>
+                <button class="try-it-btn" onclick="checkAnswer('q1', 'b')">Check Answer</button>
+                <div id="res-q1" class="feedback"></div>
+            </div>
+        </div>
+    </details>
+
+    <details>
+        <summary>Module 2: Data Entry & Hygiene</summary>
+        <div class="content">
+            <h2>Clean Data = Accurate Models</h2>
+            <p>Garbage In, Garbage Out. As an analyst, 80% of your time is cleaning data.</p>
+
+            <h3>1. The "Customers" Dataset</h3>
+            <p>Imagine you have raw data like: <code>Doe, John | 2023-01-01 | 4500</code></p>
+            
+            <h3>2. Essential Tools</h3>
+            <ul>
+                <li><strong>Flash Fill (Ctrl+E):</strong> The AI of Excel. Detects patterns and auto-fills data. Great for splitting names or formatting emails.</li>
+                <li><strong>Text to Columns:</strong> (Data Tab) Split a single column into two based on a delimiter (comma, space).</li>
+                <li><strong>Remove Duplicates:</strong> (Data Tab > Data Tools) Critical for ensuring unique records.</li>
+            </ul>
+
+            <div class="ds-note">
+                <strong>Analyst Tip:</strong> Dates in Excel are actually numbers (serial numbers). If you see `44927` instead of a date, just change the Format to "Short Date".
+            </div>
+
+            <h3>3. Keyboard Shortcuts (Speed is Key)</h3>
+            <ul>
+                <li><code>Ctrl + Arrow</code>: Jump to the edge of data.</li>
+                <li><code>Ctrl + Shift + Arrow</code>: Select data to the edge.</li>
+                <li><code>Ctrl + ;</code>: Insert today's date (static).</li>
+            </ul>
+
+            <button class="try-it-btn" onclick="toggleTask('task2')">Try It Yourself</button>
+            <div id="task2" class="hidden-task">
+                <strong>Task:</strong> In cell A1, type <code>john.doe@company.com</code>.
+                <br>In B1, type <code>John</code>.
+                <br>In A2, type <code>jane.smith@company.com</code>.
+                <br>Click B2 and press <code>Ctrl+E</code>. Excel should auto-extract the name "Jane".
+            </div>
+
+            <div class="quiz-section">
+                <div class="quiz-question">Q: Which shortcut jumps your cursor to the bottom of a dataset?</div>
+                <div class="options">
+                    <label><input type="radio" name="q2" value="a"> Ctrl + End</label>
+                    <label><input type="radio" name="q2" value="b"> Alt + Down</label>
+                    <label><input type="radio" name="q2" value="c"> Ctrl + Down Arrow</label>
+                </div>
+                <button class="try-it-btn" onclick="checkAnswer('q2', 'c')">Check Answer</button>
+                <div id="res-q2" class="feedback"></div>
+            </div>
+        </div>
+    </details>
+
+    <details>
+        <summary>Module 3: Essential Formulas for Analysts</summary>
+        <div class="content">
+            <h2>Logic & Lookups</h2>
+            <p>This is the core of Excel analysis. We move from data entry to data intelligence.</p>
+
+            <h3>1. The IF Function</h3>
+            <p>Logic: <code>=IF(Condition, Value_if_True, Value_if_False)</code></p>
+            <pre>=IF(B2>1000, "High Value", "Standard")</pre>
+
+            <h3>2. VLOOKUP (Vertical Lookup)</h3>
+            <p>Used to join data from two tables (like a SQL JOIN). You have an ID, you want the Name associated with it.</p>
+            
+            <div class="syntax-diagram">
+                <div class="syntax-part">
+                    <span class="syntax-label">1. Lookup Value</span>
+                    <span class="syntax-value">A2</span>
+                    <br><small>What ID are you searching for?</small>
+                </div>
+                <div class="syntax-part">
+                    <span class="syntax-label">2. Table Array</span>
+                    <span class="syntax-value">D:G</span>
+                    <br><small>Where is the data?</small>
+                </div>
+                <div class="syntax-part">
+                    <span class="syntax-label">3. Col Index</span>
+                    <span class="syntax-value">3</span>
+                    <br><small>Which column to return?</small>
+                </div>
+                <div class="syntax-part">
+                    <span class="syntax-label">4. Range Lookup</span>
+                    <span class="syntax-value">0</span>
+                    <br><small>Exact Match (Always use 0/FALSE)</small>
+                </div>
+            </div>
+            <p><strong>Syntax:</strong> <code>=VLOOKUP(A2, D:G, 3, 0)</code></p>
+
+            <h3>3. Aggregates</h3>
+            <ul>
+                <li><code>=COUNTIF(Range, Criteria)</code>: Count how many sales were > $500.</li>
+                <li><code>=SUMIF(Range, Criteria, Sum_Range)</code>: Sum sales ONLY for "Region A".</li>
+            </ul>
+
+            <button class="try-it-btn" onclick="toggleTask('task3')">Try It Yourself</button>
+            <div id="task3" class="hidden-task">
+                <strong>Task:</strong> Create a column "Status". Use an IF formula: If Sales > 500, return "Bonus", otherwise return "Review".
+            </div>
+
+            <div class="quiz-section">
+                <div class="quiz-question">Q: In VLOOKUP, what does the last argument '0' or 'FALSE' mean?</div>
+                <div class="options">
+                    <label><input type="radio" name="q3" value="a"> Approximate Match</label>
+                    <label><input type="radio" name="q3" value="b"> Exact Match</label>
+                    <label><input type="radio" name="q3" value="c"> Return 0 if error</label>
+                </div>
+                <button class="try-it-btn" onclick="checkAnswer('q3', 'b')">Check Answer</button>
+                <div id="res-q3" class="feedback"></div>
+            </div>
+        </div>
+    </details>
+
+    <details>
+        <summary>Module 4: Data Visualization & Statistics</summary>
+        <div class="content">
+            <h2>Visualizing Insights</h2>
+            <p>Data visualization helps identify outliers and trends instantly.</p>
+
+            <h3>1. Descriptive Statistics</h3>
+            <ul>
+                <li><code>=AVERAGE(range)</code>: The mean.</li>
+                <li><code>=MEDIAN(range)</code>: The middle value (often better than average for salaries/sales).</li>
+                <li><code>=STDEV.S(range)</code>: Standard Deviation (how spread out the data is).</li>
+            </ul>
+
+            <h3>2. Essential Charts</h3>
+            <div class="ds-note">
+                <strong>Analyst Tip:</strong> Select your data, then press <code>Alt + F1</code> to instantly insert a default column chart.
+            </div>
+            <ul>
+                <li><strong>Histogram:</strong> Best for checking distribution (e.g., age groups of customers).</li>
+                <li><strong>Scatter Plot:</strong> Best for correlation (e.g., Ad Spend vs. Sales).</li>
+                <li><strong>Box & Whisker:</strong> Best for spotting outliers.</li>
+            </ul>
+
+            <button class="try-it-btn" onclick="toggleTask('task4')">Try It Yourself</button>
+            <div id="task4" class="hidden-task">
+                <strong>Task:</strong> Select your Sales column. Go to Insert > Recommended Charts. Pick a Column Chart. Add a Trendline (Right click data bar > Add Trendline).
+            </div>
+
+            <div class="quiz-section">
+                <div class="quiz-question">Q: Which function would you use to find the central value in a dataset with extreme outliers?</div>
+                <div class="options">
+                    <label><input type="radio" name="q4" value="a"> AVERAGE</label>
+                    <label><input type="radio" name="q4" value="b"> MEDIAN</label>
+                    <label><input type="radio" name="q4" value="c"> MAX</label>
+                </div>
+                <button class="try-it-btn" onclick="checkAnswer('q4', 'b')">Check Answer</button>
+                <div id="res-q4" class="feedback"></div>
+            </div>
+        </div>
+    </details>
+
+    <details>
+        <summary>Module 5: Advanced Data Crunching</summary>
+        <div class="content">
+            <h2>The Power of Pivot Tables</h2>
+            <p>Pivot Tables are the "Group By" of Excel. They allow you to summarize 100,000 rows in seconds.</p>
+
+            <h3>1. Creating a Pivot</h3>
+            <p>Insert > PivotTable. Drag fields into the 4 quadrants:</p>
+            <ul>
+                <li><strong>Rows:</strong> Categories (e.g., Region, Product).</li>
+                <li><strong>Values:</strong> Metrics (e.g., Sum of Sales, Count of Customers).</li>
+                <li><strong>Columns:</strong> Sub-groups (e.g., Year).</li>
+                <li><strong>Filters:</strong> High-level screening.</li>
+            </ul>
+
+            <h3>2. Slicers</h3>
+            <p>Slicers are visual buttons that filter your Pivot Table. They are user-friendly and great for dashboards.</p>
+
+            <div class="ds-note">
+                <strong>Analyst Tip:</strong> Always format your raw data as a "Table" (Ctrl+T) before creating a Pivot Table. This ensures new data added later is automatically included when you click "Refresh".
+            </div>
+
+            <button class="try-it-btn" onclick="toggleTask('task5')">Try It Yourself</button>
+            <div id="task5" class="hidden-task">
+                <strong>Task:</strong> Create a Pivot Table from the Performance Appraisals/Sales data. Drag "Department" to Rows and "Salary" to Values. Change the calculation from SUM to AVERAGE.
+            </div>
+
+            <div class="quiz-section">
+                <div class="quiz-question">Q: What must you do to update a Pivot Table after changing the source data?</div>
+                <div class="options">
+                    <label><input type="radio" name="q5" value="a"> Nothing, it updates live.</label>
+                    <label><input type="radio" name="q5" value="b"> Right-click and select "Refresh".</label>
+                    <label><input type="radio" name="q5" value="c"> Delete and remake it.</label>
+                </div>
+                <button class="try-it-btn" onclick="checkAnswer('q5', 'b')">Check Answer</button>
+                <div id="res-q5" class="feedback"></div>
+            </div>
+        </div>
+    </details>
+
+</div>
+
+<script>
+    // Dark Mode Logic
+    const toggle = document.getElementById('theme-toggle');
+    toggle.addEventListener('change', function() {
+        if(this.checked) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+    });
+
+    // Task Toggle Logic
+    function toggleTask(id) {
+        var x = document.getElementById(id);
+        if (x.style.display === "block") {
+            x.style.display = "none";
+        } else {
+            x.style.display = "block";
+        }
+    }
+
+    // Quiz Logic
+    function checkAnswer(questionId, correctAnswer) {
+        const selected = document.querySelector(`input[name="${questionId}"]:checked`);
+        const resultDiv = document.getElementById(`res-${questionId}`);
+        
+        if (!selected) {
+            resultDiv.innerHTML = "Please select an answer.";
+            resultDiv.className = "feedback";
+            return;
+        }
+
+        if (selected.value === correctAnswer) {
+            resultDiv.innerHTML = "✅ Correct! Good job.";
+            resultDiv.className = "feedback correct";
+        } else {
+            resultDiv.innerHTML = "❌ Incorrect. Try again.";
+            resultDiv.className = "feedback incorrect";
+        }
+    }
+</script>
+
+</body>
+</html>

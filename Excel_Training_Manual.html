@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel for Data Science: Zero to Hero</title>
+    <style>
+        :root {
+            --excel-green: #217346;
+            --excel-light: #e6f2ea;
+            --text-dark: #333;
+            --code-bg: #f4f4f4;
+            --highlight: #ffeb3b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            margin: 0;
+            background-color: #f9f9f9;
+        }
+
+        /* Layout */
+        header {
+            background-color: var(--excel-green);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            background: white;
+            border-bottom: 2px solid var(--excel-green);
+            padding: 10px 0;
+            z-index: 100;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            text-align: center;
+            margin: 0;
+        }
+
+        nav ul li {
+            display: inline;
+            margin: 0 15px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: bold;
+        }
+
+        nav a:hover {
+            color: var(--excel-green);
+        }
+
+        h1 { margin: 0; }
+        h2 { border-bottom: 2px solid var(--excel-green); padding-bottom: 10px; margin-top: 40px; }
+        h3 { color: var(--excel-green); margin-top: 25px; }
+
+        /* Excel Grid Visualization */
+        .excel-grid {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .excel-grid th, .excel-grid td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .excel-grid th {
+            background-color: #e6e6e6;
+            font-weight: bold;
+            text-align: center;
+            width: 50px;
+        }
+        
+        .excel-grid .header-row td {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        .highlight-cell {
+            background-color: var(--highlight);
+            border: 2px solid #ff9800 !important;
+        }
+
+        /* Components */
+        .key-concept {
+            background-color: var(--excel-light);
+            border-left: 5px solid var(--excel-green);
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .python-bridge {
+            background-color: #f0f7ff;
+            border-left: 5px solid #3776ab; /* Python Blue */
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+
+        .python-bridge strong { color: #3776ab; }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            color: #d63384;
+        }
+
+        .formula-box {
+            background: #333;
+            color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            margin: 10px 0;
+        }
+
+        /* Visual Diagrams */
+        .visual-diagram {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px dashed #ccc;
+            background: #fafafa;
+        }
+
+        .box {
+            padding: 15px;
+            background: white;
+            border: 2px solid var(--excel-green);
+            border-radius: 8px;
+            text-align: center;
+            width: 150px;
+        }
+
+        .arrow { font-size: 24px; color: #999; }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Excel for Data Science</h1>
+    <p>Zero to Hero Training Module</p>
+</header>
+
+<div class="container">
+    <nav>
+        <ul>
+            <li><a href="#module1">1. Foundations</a></li>
+            <li><a href="#module2">2. Cleaning</a></li>
+            <li><a href="#module3">3. Functions</a></li>
+            <li><a href="#module4">4. EDA</a></li>
+            <li><a href="#capstone">Capstone</a></li>
+        </ul>
+    </nav>
+
+    <section id="module1">
+        <h2>Module 1: The Foundation (The "Zero" State)</h2>
+        <p>Before we analyze, we must navigate. Speed is the first requirement of a Data Analyst.</p>
+
+        <div class="key-concept">
+            <strong>The Golden Rule:</strong> Never touch the mouse if you can use the keyboard.
+        </div>
+
+        <h3>1. Essential Shortcuts</h3>
+        <table class="excel-grid">
+            <tr class="header-row"><td>Shortcut</td><td>Action</td><td>Why it matters</td></tr>
+            <tr><td><code>Ctrl + Arrows</code></td><td>Jump to edge of data</td><td>Navigate 1M rows instantly</td></tr>
+            <tr><td><code>Ctrl + Shift + Arrows</code></td><td>Select data</td><td>Grab huge datasets for analysis</td></tr>
+            <tr><td><code>Ctrl + T</code></td><td>Create Table</td><td>Dynamic ranges for Pivot Tables</td></tr>
+            <tr><td><code>Alt + =</code></td><td>AutoSum</td><td>Fastest way to add numbers</td></tr>
+        </table>
+
+        <h3>2. Data Types Visualized</h3>
+        <p>Excel often confuses Numbers for Text. This breaks your analysis.</p>
+        <table class="excel-grid">
+            <tr><th></th><th>A</th><th>B</th><th>C</th></tr>
+            <tr><th>1</th><td><b>Value</b></td><td><b>Alignment</b></td><td><b>Type</b></td></tr>
+            <tr><th>2</th><td style="text-align:right">1234</td><td>Right Aligned</td><td>Number (Good)</td></tr>
+            <tr><th>3</th><td style="text-align:left">1234</td><td>Left Aligned</td><td>Text (Bad - Will not sum)</td></tr>
+            <tr><th>4</th><td style="text-align:right">21-Jan</td><td>Right Aligned</td><td>Date (Good)</td></tr>
+        </table>
+    </section>
+
+    <section id="module2">
+        <h2>Module 2: Data Cleaning (80% of the Job)</h2>
+        <p>Real-world data is messy. You cannot analyze it until you clean it.</p>
+
+        <h3>1. The Trim & Proper Problem</h3>
+        <p>Imagine receiving this messy user data. We use <code>=TRIM()</code> to remove spaces and <code>=PROPER()</code> to fix casing.</p>
+        
+        <div class="visual-diagram">
+            <div class="box" style="border-color: #d9534f;">
+                <strong>Messy Input</strong><br>
+                "  john DOE  "
+            </div>
+            <div class="arrow">&rarr;</div>
+            <div class="box" style="border-style: dashed;">
+                <strong>=TRIM(A1)</strong><br>
+                "john DOE"
+            </div>
+            <div class="arrow">&rarr;</div>
+            <div class="box">
+                <strong>=PROPER(...)</strong><br>
+                "John Doe"
+            </div>
+        </div>
+
+        <h3>2. Flash Fill (The Magic Wand)</h3>
+        <p>Type one example of what you want, then press <code>Ctrl + E</code>.</p>
+        <table class="excel-grid">
+            <tr><th></th><th>A (Raw Email)</th><th>B (Extracted Name)</th></tr>
+            <tr><th>1</th><td>john.doe@gmail.com</td><td>John Doe</td></tr>
+            <tr><th>2</th><td>jane.smith@yahoo.com</td><td class="highlight-cell"><i>(Press Ctrl+E here)</i></td></tr>
+        </table>
+    </section>
+
+    <section id="module3">
+        <h2>Module 3: The Analyst's Toolkit (Functions)</h2>
+        
+        <h3>1. VLOOKUP / XLOOKUP (Merging Data)</h3>
+        <p>Used to bring data from one table into another based on a common ID.</p>
+        
+        <div class="formula-box">
+            =VLOOKUP( What_to_look_for, Where_to_look, Which_column_to_return, False/0 )
+        </div>
+
+        <div class="python-bridge">
+            <strong>Python/Pandas Analogy:</strong><br>
+            VLOOKUP is exactly like a <code>Left Join</code> in SQL or <code>pd.merge(df1, df2, on='ID', how='left')</code> in Python.
+        </div>
+
+        <h3>2. Logic (IF Statements)</h3>
+        <p>Creating new categories based on data.</p>
+        <div class="formula-box">
+            =IF( Sales > 1000, "High Performance", "Low Performance" )
+        </div>
+    </section>
+
+    <section id="module4">
+        <h2>Module 4: Pivot Tables (EDA)</h2>
+        <p>Exploratory Data Analysis starts here. Pivot Tables allow you to summarize 1 million rows in 5 seconds.</p>
+
+        <div class="visual-diagram">
+            <div class="box" style="width: 100px; background: #eee;">
+                <strong>Raw Data</strong><br>
+                (10k rows)
+            </div>
+            <div class="arrow">&rarr;</div>
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                <div style="border:1px solid #333; padding:5px; background:#fff;">Rows: Region</div>
+                <div style="border:1px solid #333; padding:5px; background:#fff;">Values: Sum of Sales</div>
+            </div>
+            <div class="arrow">&rarr;</div>
+            <div class="box">
+                <strong>Summary</strong><br>
+                North: $50k<br>South: $20k
+            </div>
+        </div>
+
+        <div class="python-bridge">
+            <strong>Python/Pandas Analogy:</strong><br>
+            Pivot Tables are the Excel equivalent of <code>df.groupby('Region')['Sales'].sum()</code>.
+        </div>
+    </section>
+
+    <section id="capstone">
+        <h2>Hands-on Capstone Project: "The Retail Analyst"</h2>
+        <div class="key-concept">
+            <strong>Objective:</strong> You have been given a raw sales dump (CSV). Your manager needs a report on profitability by region.
+        </div>
+
+        <ol>
+            <li><strong>Import & Clean:</strong>
+                <ul>
+                    <li>Remove duplicates based on "Order ID".</li>
+                    <li>Fix "Customer Name" formatting using PROPER.</li>
+                    <li>Fill blank "Region" cells with "Unknown".</li>
+                </ul>
+            </li>
+            <li><strong>Analyze:</strong>
+                <ul>
+                    <li>Create a new column <code>Profit_Flag</code>: If Profit < 0, "Loss", else "Profit".</li>
+                    <li>Use <code>VLOOKUP</code> to add a "Manager Name" column from the secondary table.</li>
+                </ul>
+            </li>
+            <li><strong>Visualize:</strong>
+                <ul>
+                    <li>Insert a Pivot Table: Rows = Manager, Values = Sum of Sales.</li>
+                    <li>Create a Bar Chart showing top 5 Managers.</li>
+                    <li>Use Conditional Formatting to highlight any transaction with a "Loss".</li>
+                </ul>
+            </li>
+        </ol>
+    </section>
+
+    <footer style="text-align: center; padding: 20px; font-size: 0.8em; color: #777;">
+        <hr>
+        <p>Excel Training Module | Designed for Data Science Aspirants</p>
+    </footer>
+</div>
+
+</body>
+</html>
