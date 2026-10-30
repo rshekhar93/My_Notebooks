@@ -1,0 +1,2683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XGBoost: The Complete Algorithmic & Hyperparameter Masterclass</title>
+
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: '#080915',
+        surface: '#0f1123',
+        surfaceLight: '#181b38',
+        surfaceBorder: 'rgba(56, 189, 248, 0.15)',
+        accent: '#38bdf8',       // Electric Cyan (3B1B)
+        accentGlow: 'rgba(56, 189, 248, 0.25)',
+        gold: '#facc15',         // Mathematical Gold (3B1B)
+        coral: '#f43f5e',        // Error / Gradient Rose
+        mint: '#10b981',         // Success / Optimization Emerald
+        lavender: '#a855f7',     // Hessian / Regularization Purple
+        blush: '#fb7185',
+        textMain: '#f1f5f9',
+        textMuted: '#94a3b8',
+        textDark: '#475569'
+      },
+      fontFamily: {
+        mono: ['"JetBrains Mono"', 'Consolas', 'monospace'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- KaTeX for pristine mathematical rendering -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: #080915; color: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; }
+  canvas { display: block; }
+  
+  /* 3Blue1Brown aesthetic glows and containers */
+  .canvas-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 0%, #151835, #0a0b1c 85%);
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.8), 0 0 25px rgba(56, 189, 248, 0.05);
+  }
+  .canvas-card:hover {
+    border-color: rgba(56, 189, 248, 0.35);
+  }
+  
+  .glass-card {
+    background: rgba(15, 17, 35, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+  }
+  
+  .glow-text-cyan { text-shadow: 0 0 15px rgba(56, 189, 248, 0.5); }
+  .glow-text-gold { text-shadow: 0 0 15px rgba(250, 204, 21, 0.45); }
+  
+  .slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 4px;
+    background: #181b38;
+    outline: none;
+    transition: background 0.2s;
+  }
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #38bdf8;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
+    border: 2px solid #080915;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: #7dd3fc;
+  }
+  .slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #38bdf8;
+    cursor: pointer;
+    border: 2px solid #080915;
+  }
+
+  .interactive-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .interactive-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px -2px rgba(56, 189, 248, 0.35);
+  }
+  .interactive-btn:active {
+    transform: translateY(0);
+  }
+
+  .formula-box {
+    background: rgba(10, 11, 26, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    box-shadow: inset 0 0 15px rgba(56, 189, 248, 0.03);
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .nav-item {
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+  }
+  .nav-item:hover, .nav-item.active {
+    color: #38bdf8;
+    border-color: #38bdf8;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-track { background: #080915; }
+  ::-webkit-scrollbar-thumb { background: #1e2247; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+
+  /* Tab styling */
+  .tab-btn.active {
+    background: #181b38;
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.4);
+  }
+  
+  /* Quiz options */
+  .quiz-opt {
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .quiz-opt:hover {
+    border-color: rgba(56, 189, 248, 0.4);
+    background: rgba(56, 189, 248, 0.06);
+  }
+  .quiz-opt.selected {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+  }
+  .quiz-opt.correct {
+    border-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.15) !important;
+  }
+  .quiz-opt.wrong {
+    border-color: #f43f5e !important;
+    background: rgba(244, 63, 94, 0.15) !important;
+  }
+
+  /* KaTeX font adjustments */
+  .katex { font-size: 1.05em; color: #facc15; }
+</style>
+</head>
+<body class="selection:bg-accent/30 selection:text-white">
+
+<!-- TOP PROGRESS BAR -->
+<div id="scrollProgress" class="fixed top-0 left-0 h-1 bg-gradient-to-r from-accent via-gold to-lavender z-50 transition-all duration-100" style="width: 0%"></div>
+
+<!-- HEADER NAVIGATION -->
+<nav class="fixed top-0 left-0 right-0 z-40 bg-bg/90 backdrop-blur-md border-b border-white/5">
+  <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+    <a href="#hero" class="flex items-center gap-2.5 font-mono font-bold text-sm tracking-wider">
+      <span class="w-2.5 h-2.5 rounded-full bg-accent shadow-[0_0_10px_#38bdf8]"></span>
+      <span class="text-white font-extrabold tracking-widest">XGBOOST</span>
+      <span class="text-[11px] px-2 py-0.5 rounded bg-accent/10 border border-accent/30 text-accent font-semibold tracking-normal">VISUALIZED</span>
+    </a>
+    <div class="hidden lg:flex items-center gap-6 text-xs font-medium text-textMuted tracking-wide">
+      <a href="#evolution" class="nav-item py-1">Why XGBoost</a>
+      <a href="#algorithm" class="nav-item py-1">The Engine</a>
+      <a href="#taylor" class="nav-item py-1">Taylor Expansion</a>
+      <a href="#split-finding" class="nav-item py-1">Split & Gain</a>
+      <a href="#hyperparams" class="nav-item py-1">Hyperparameters</a>
+      <a href="#workbench" class="nav-item py-1 text-gold font-semibold">Master Playground</a>
+      <a href="#tuning-guide" class="nav-item py-1">Tuning Playbook</a>
+      <a href="#code-lab" class="nav-item py-1">Code</a>
+      <a href="#quiz" class="nav-item py-1">Mastery Quiz</a>
+    </div>
+    <a href="#workbench" class="text-xs font-semibold px-4 py-2 rounded-lg bg-accent/15 border border-accent/40 text-accent hover:bg-accent/25 transition">
+      Launch Simulator
+    </a>
+  </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section id="hero" class="relative min-h-[92vh] flex items-center justify-center pt-24 pb-16 px-6 overflow-hidden">
+  <canvas id="heroCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+  <div class="relative z-10 max-w-5xl mx-auto text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent text-xs font-mono mb-6 backdrop-blur-sm">
+      <span class="inline-block w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+      INTERACTIVE ALGORITHMIC DEEP DIVE
+    </div>
+    <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-none mb-6">
+      XGBoost <span class="bg-gradient-to-r from-accent via-gold to-lavender bg-clip-text text-transparent">From First Principles</span>
+    </h1>
+    <p class="text-base sm:text-xl text-textMuted max-w-3xl mx-auto leading-relaxed mb-10">
+      Stop treating eXtreme Gradient Boosting like a black box. Master the exact 2nd-order Taylor math, greedy gain splitting, similarity scores, and hyperparameter dynamics through <span class="text-white font-medium">3Blue1Brown-style procedural visualizations</span>.
+    </p>
+
+    <div class="flex flex-wrap items-center justify-center gap-4 text-sm font-semibold">
+      <a href="#algorithm" class="interactive-btn px-7 py-3 rounded-xl bg-accent text-bg font-bold shadow-lg shadow-accent/20">
+        Step Into The Engine ↓
+      </a>
+      <a href="#workbench" class="interactive-btn px-7 py-3 rounded-xl bg-surface border border-accent/30 text-white hover:border-accent">
+        Interactive Hyperparameter Lab
+      </a>
+    </div>
+
+    <!-- Quick stats strip -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto mt-16 pt-8 border-t border-white/5 text-left">
+      <div class="p-3">
+        <div class="text-xs font-mono text-accent">MATHEMATICAL ENGINE</div>
+        <div class="text-lg font-bold text-white mt-1">2nd Order Taylor</div>
+        <div class="text-xs text-textMuted">Gradients $g_i$ + Hessians $h_i$</div>
+      </div>
+      <div class="p-3">
+        <div class="text-xs font-mono text-gold">SPLIT EVALUATION</div>
+        <div class="text-lg font-bold text-white mt-1">Similarity Gain</div>
+        <div class="text-xs text-textMuted">Analytical $\Delta\text{Gain}$ with $\gamma, \lambda$</div>
+      </div>
+      <div class="p-3">
+        <div class="text-xs font-mono text-mint">REGULARIZATION</div>
+        <div class="text-lg font-bold text-white mt-1">L1 + L2 + Tree Pruning</div>
+        <div class="text-xs text-textMuted">$\alpha, \lambda, \gamma$ three-tier guardrail</div>
+      </div>
+      <div class="p-3">
+        <div class="text-xs font-mono text-lavender">SPEEDUP ARCHITECTURE</div>
+        <div class="text-lg font-bold text-white mt-1">Weighted Quantile</div>
+        <div class="text-xs text-textMuted">Sparsity-aware fast binning</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 1: EVOLUTION & WHY XGBOOST -->
+<section id="evolution" class="py-24 px-6 border-t border-white/5 bg-surface/30">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-12">
+      <span class="text-xs font-mono font-bold tracking-widest text-accent uppercase">01 / Architectural Context</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold text-white mt-2">The Evolution of Tree Ensembles</h2>
+      <p class="text-textMuted mt-3 max-w-3xl">
+        How did we get from a simple Decision Tree to the dominant tabular algorithm in machine learning? Click each paradigm to inspect its core mechanics and fundamental failure mode.
+      </p>
+    </div>
+
+    <!-- Interactive Paradigm Tabs -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+      <button onclick="switchEvolutionTab(0)" class="evo-tab text-left p-4 rounded-xl border border-white/10 bg-surface hover:border-accent/40 transition active" id="evo-btn-0">
+        <div class="text-xs font-mono text-textMuted">PARADIGM 1</div>
+        <div class="text-base font-bold text-white mt-1">Decision Tree</div>
+        <div class="text-xs text-accent mt-2">High Variance Baseline</div>
+      </button>
+      <button onclick="switchEvolutionTab(1)" class="evo-tab text-left p-4 rounded-xl border border-white/10 bg-surface hover:border-accent/40 transition" id="evo-btn-1">
+        <div class="text-xs font-mono text-textMuted">PARADIGM 2</div>
+        <div class="text-base font-bold text-white mt-1">Random Forest</div>
+        <div class="text-xs text-mint mt-2">Bagging (Parallel)</div>
+      </button>
+      <button onclick="switchEvolutionTab(2)" class="evo-tab text-left p-4 rounded-xl border border-white/10 bg-surface hover:border-accent/40 transition" id="evo-btn-2">
+        <div class="text-xs font-mono text-textMuted">PARADIGM 3</div>
+        <div class="text-base font-bold text-white mt-1">Standard GBM</div>
+        <div class="text-xs text-gold mt-2">Boosting (1st Order)</div>
+      </button>
+      <button onclick="switchEvolutionTab(3)" class="evo-tab text-left p-4 rounded-xl border border-white/10 bg-surface hover:border-accent/40 transition" id="evo-btn-3">
+        <div class="text-xs font-mono text-textMuted">PARADIGM 4</div>
+        <div class="text-base font-bold text-white mt-1">XGBoost</div>
+        <div class="text-xs text-lavender mt-2">Newton Boosting (2nd Order)</div>
+      </button>
+    </div>
+
+    <!-- Interactive Evolution Content Display -->
+    <div id="evo-content-card" class="canvas-card p-8">
+      <div class="flex flex-col lg:flex-row items-center gap-8">
+        <div class="flex-1 space-y-4">
+          <div class="inline-block px-3 py-1 rounded-md text-xs font-mono" id="evo-badge">PARADIGM DETAILS</div>
+          <h3 class="text-2xl font-bold text-white" id="evo-title">Single Decision Tree</h3>
+          <p class="text-textMuted leading-relaxed" id="evo-desc">
+            Greedily partitions feature space via heuristic metrics (e.g. Gini Impurity, Variance Reduction). Solitary trees easily split noise, leading to catastrophic overfitting without rigorous pruning.
+          </p>
+          <div class="grid grid-cols-2 gap-4 pt-2">
+            <div class="p-3 rounded-lg bg-bg/80 border border-white/5">
+              <span class="text-xs text-mint font-semibold block">ADVANTAGE</span>
+              <span class="text-xs text-textMuted mt-1 block" id="evo-pro">Fully interpretable, zero feature scaling needed.</span>
+            </div>
+            <div class="p-3 rounded-lg bg-bg/80 border border-white/5">
+              <span class="text-xs text-coral font-semibold block">FATAL FLAW</span>
+              <span class="text-xs text-textMuted mt-1 block" id="evo-con">High variance; fragile to slight dataset perturbations.</span>
+            </div>
+          </div>
+        </div>
+        <div class="w-full lg:w-[480px] h-[260px] rounded-xl bg-bg/90 border border-white/10 flex items-center justify-center p-4 relative overflow-hidden">
+          <canvas id="evoCanvas" class="w-full h-full"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: THE CORE ALGORITHM ENGINE (STEP-BY-STEP SIMULATOR) -->
+<section id="algorithm" class="py-24 px-6 border-t border-white/5">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+      <div>
+        <span class="text-xs font-mono font-bold tracking-widest text-accent uppercase">02 / Algorithmic Core</span>
+        <h2 class="text-3xl md:text-4xl font-extrabold text-white mt-1">How XGBoost Actually Learns: The 6-Step Loop</h2>
+        <p class="text-textMuted mt-2 max-w-2xl">
+          Unlike linear models that update parameters, XGBoost performs <span class="text-white font-medium">optimization in functional space</span>. Step through an actual round of boosting below.
+        </p>
+      </div>
+      <!-- Controls -->
+      <div class="flex items-center gap-2">
+        <button id="algoPrevBtn" class="interactive-btn px-4 py-2 rounded-lg bg-surface border border-white/10 text-xs font-semibold text-white hover:border-accent">← Previous</button>
+        <button id="algoNextBtn" class="interactive-btn px-4 py-2 rounded-lg bg-accent text-bg text-xs font-bold shadow-md shadow-accent/20">Next Step →</button>
+        <button id="algoAutoPlayBtn" class="interactive-btn px-4 py-2 rounded-lg bg-surface border border-accent/30 text-xs font-semibold text-accent">▶ Auto Play</button>
+      </div>
+    </div>
+
+    <!-- Active Step Indicator Stepper -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-6">
+      <div class="step-indicator p-3 rounded-lg border border-accent/40 bg-accent/10 transition" id="step-ind-0">
+        <div class="text-[10px] font-mono text-accent font-bold">STAGE 01</div>
+        <div class="text-xs font-semibold text-white mt-0.5">Base Prediction</div>
+      </div>
+      <div class="step-indicator p-3 rounded-lg border border-white/5 bg-surface transition" id="step-ind-1">
+        <div class="text-[10px] font-mono text-textMuted font-bold">STAGE 02</div>
+        <div class="text-xs font-semibold text-white mt-0.5">Compute $g_i$ & $h_i$</div>
+      </div>
+      <div class="step-indicator p-3 rounded-lg border border-white/5 bg-surface transition" id="step-ind-2">
+        <div class="text-[10px] font-mono text-textMuted font-bold">STAGE 03</div>
+        <div class="text-xs font-semibold text-white mt-0.5">Greedy Tree Split</div>
+      </div>
+      <div class="step-indicator p-3 rounded-lg border border-white/5 bg-surface transition" id="step-ind-3">
+        <div class="text-[10px] font-mono text-textMuted font-bold">STAGE 04</div>
+        <div class="text-xs font-semibold text-white mt-0.5">Leaf Weight $w_j^*$</div>
+      </div>
+      <div class="step-indicator p-3 rounded-lg border border-white/5 bg-surface transition" id="step-ind-4">
+        <div class="text-[10px] font-mono text-textMuted font-bold">STAGE 05</div>
+        <div class="text-xs font-semibold text-white mt-0.5">Shrinkage ($\eta$)</div>
+      </div>
+      <div class="step-indicator p-3 rounded-lg border border-white/5 bg-surface transition" id="step-ind-5">
+        <div class="text-[10px] font-mono text-textMuted font-bold">STAGE 06</div>
+        <div class="text-xs font-semibold text-white mt-0.5">Ensemble Update</div>
+      </div>
+    </div>
+
+    <!-- Interactive Canvas Display -->
+    <div class="canvas-card p-6">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/5">
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-accent"></span>
+          <span id="algoStepHeader" class="text-sm font-bold text-white font-mono">Stage 1: Base Score Initialization</span>
+        </div>
+        <div class="text-xs font-mono text-textMuted">
+          Iteration: <span class="text-gold font-bold">t = 1</span> | Loss: <span class="text-mint font-bold" id="algoLossVal">0.428</span>
+        </div>
+      </div>
+
+      <div class="w-full h-[440px] relative">
+        <canvas id="algoCanvas" class="w-full h-full"></canvas>
+      </div>
+
+      <!-- Explanatory math box for current stage -->
+      <div id="algoExplanationBox" class="mt-4 p-4 rounded-xl bg-bg/90 border border-accent/20 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div class="space-y-1">
+          <div class="text-xs font-bold text-accent font-mono uppercase" id="algoStageSub">MATHEMATICAL ACTION</div>
+          <div class="text-sm text-textMain" id="algoStageText">XGBoost initializes prediction $\hat{y}_i^{(0)} = 0.5$ (or mean of target). This provides the baseline offset before any trees exist.</div>
+        </div>
+        <div class="formula-box px-4 py-2.5 text-xs text-gold whitespace-nowrap" id="algoFormulaText">
+          $\hat{y}^{(0)} = \text{base\_score}$
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: 2ND-ORDER TAYLOR EXPANSION (VISUAL PROOF) -->
+<section id="taylor" class="py-24 px-6 border-t border-white/5 bg-surface/30">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-10">
+      <span class="text-xs font-mono font-bold tracking-widest text-accent uppercase">03 / Mathematical Engine</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold text-white mt-1">Why 2nd-Order Taylor Approximation?</h2>
+      <p class="text-textMuted mt-2 max-w-3xl">
+        Standard Gradient Boosting only uses the 1st derivative (steepest descent). XGBoost performs <span class="text-gold font-semibold">Newton-Raphson boosting</span> by fitting a local parabola using both the Gradient ($g_i$) and Hessian ($h_i$). Drag the current prediction point to see how the approximations behave!
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <!-- Interactive Canvas -->
+      <div class="lg:col-span-8 canvas-card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-xs font-mono text-textMuted">Loss Surface $L(y, \hat{y})$ vs Local Taylor Approximations</span>
+          <div class="flex items-center gap-4 text-xs font-mono">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-coral inline-block"></span> True Loss $L$</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-gold inline-block border-t border-dashed"></span> 1st Order (GBM)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-1 bg-accent inline-block"></span> 2nd Order (XGBoost)</span>
+          </div>
+        </div>
+        <div class="w-full h-[400px] relative">
+          <canvas id="taylorCanvas" class="w-full h-full"></canvas>
+        </div>
+        <div class="mt-6 flex flex-col sm:flex-row items-center gap-6">
+          <div class="flex-1 w-full">
+            <div class="flex justify-between text-xs font-mono text-textMuted mb-2">
+              <span>Current Prediction $\hat{y}$ (Drag to probe)</span>
+              <span class="text-accent font-bold" id="taylorYhatDisplay">0.25</span>
+            </div>
+            <input type="range" id="taylorSlider" class="slider" min="-2.0" max="2.0" step="0.05" value="0.25">
+          </div>
+          <button id="taylorAnimateBtn" class="interactive-btn px-4 py-2 rounded-lg bg-surfaceLight border border-accent/30 text-xs font-semibold text-accent whitespace-nowrap">
+            Auto-Scan Surface
+          </button>
+        </div>
+      </div>
+
+      <!-- Conceptual Breakdown Card -->
+      <div class="lg:col-span-4 space-y-4">
+        <div class="glass-card p-6">
+          <h3 class="text-base font-bold text-white mb-2">The Taylor Expansion</h3>
+          <div class="formula-box p-3 text-xs leading-relaxed text-textMain mb-4">
+            $$L(y, \hat{y} + f_t) \approx L(y, \hat{y}) + g_i f_t + \frac{1}{2} h_i f_t^2$$
+          </div>
+          <div class="space-y-3 text-xs text-textMuted leading-relaxed">
+            <p>
+              <strong class="text-accent">First Derivative ($g_i$):</strong> $\frac{\partial L}{\partial \hat{y}}$. Represents the <span class="text-white">direction and slope</span> of steepest descent.
+            </p>
+            <p>
+              <strong class="text-lavender">Second Derivative ($h_i$):</strong> $\frac{\partial^2 L}{\partial \hat{y}^2}$. Represents the <span class="text-white">curvature</span> of the loss function.
+            </p>
+            <div class="p-3 rounded-lg bg-gold/10 border border-gold/20 text-gold font-medium">
+              💡 <strong>Why this is revolutionary:</strong> Because the objective is now a quadratic equation in $f_t$, we can solve for the optimal leaf weight <span class="underline">analytically</span> in $O(1)$ time without running numerical gradient descent steps!
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card p-5">
+          <span class="text-[10px] font-mono text-accent uppercase font-bold">Standard Loss Functions Reference</span>
+          <div class="mt-2 space-y-2 text-xs font-mono">
+            <div class="p-2 rounded bg-bg/80 flex justify-between items-center">
+              <span class="text-textMuted">MSE Loss $\frac{1}{2}(y-\hat{y})^2$:</span>
+              <span class="text-mint">$g_i = \hat{y}-y, \;\; h_i = 1$</span>
+            </div>
+            <div class="p-2 rounded bg-bg/80 flex justify-between items-center">
+              <span class="text-textMuted">LogLoss (Binary):</span>
+              <span class="text-mint">$g_i = p_i - y_i, \;\; h_i = p_i(1-p_i)$</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: EXACT GREEDY SPLIT FINDING & SIMILARITY GAIN SIMULATOR -->
+<section id="split-finding" class="py-24 px-6 border-t border-white/5">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-8">
+      <span class="text-xs font-mono font-bold tracking-widest text-accent uppercase">04 / Tree Growth Mechanics</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold text-white mt-1">Split Finding: Similarity Score & Gain</h2>
+      <p class="text-textMuted mt-2 max-w-3xl">
+        How does XGBoost pick where to split a leaf? It calculates a <span class="text-accent font-semibold">Similarity Score</span> for the parent and prospective children. Drag the split cut-point along the dataset below to see the exact Gain formula calculated in real time!
+      </p>
+    </div>
+
+    <div class="canvas-card p-6">
+      <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Canvas area -->
+        <div class="flex-1">
+          <div class="flex items-center justify-between mb-3 text-xs font-mono text-textMuted">
+            <span>Feature $X_1$ Space (Drag red slider or click canvas to test split threshold)</span>
+            <span class="text-gold">Threshold $C$: <strong id="splitCutValue" class="text-accent">2.40</strong></span>
+          </div>
+          <div class="w-full h-[360px] relative">
+            <canvas id="splitCanvas" class="w-full h-full cursor-ew-resize"></canvas>
+          </div>
+          <!-- Slider below canvas -->
+          <div class="mt-4">
+            <input type="range" id="splitSlider" class="slider" min="0.5" max="5.5" step="0.05" value="2.40">
+          </div>
+        </div>
+
+        <!-- Live Math & Gain Dashboard -->
+        <div class="w-full lg:w-[380px] flex flex-col justify-between space-y-4">
+          <div class="glass-card p-4 space-y-3">
+            <div class="text-xs font-mono text-accent font-bold uppercase border-b border-white/5 pb-2">Live Similarity Metrics</div>
+            
+            <div class="space-y-2 text-xs font-mono">
+              <div class="p-2 rounded bg-bg/80 flex justify-between items-center">
+                <span class="text-textMuted">Root Score ($S_{root}$):</span>
+                <span id="simRootVal" class="text-white font-bold">14.28</span>
+              </div>
+              <div class="p-2 rounded bg-bg/80 flex justify-between items-center border-l-2 border-accent">
+                <span class="text-textMuted">Left Child ($S_L$):</span>
+                <span id="simLeftVal" class="text-accent font-bold">19.52</span>
+              </div>
+              <div class="p-2 rounded bg-bg/80 flex justify-between items-center border-l-2 border-lavender">
+                <span class="text-textMuted">Right Child ($S_R$):</span>
+                <span id="simRightVal" class="text-lavender font-bold">12.10</span>
+              </div>
+            </div>
+
+            <!-- Gain formula callout -->
+            <div class="formula-box p-3 text-[11px] text-textMuted leading-relaxed">
+              $$\text{Gain} = \frac{1}{2} \left[ \frac{G_L^2}{H_L + \lambda} + \frac{G_R^2}{H_R + \lambda} - \frac{G_{root}^2}{H_{root} + \lambda} \right] - \gamma$$
+            </div>
+
+            <!-- Live Net Gain -->
+            <div class="p-4 rounded-xl bg-bg border" id="gainStatusCard">
+              <div class="text-xs font-mono text-textMuted">CALCULATED NET GAIN:</div>
+              <div class="text-2xl font-black mt-1" id="gainScoreDisplay">+8.67</div>
+              <div class="text-xs mt-1" id="gainPruneText">Split approved ($\text{Gain} > 0$)</div>
+            </div>
+          </div>
+
+          <!-- Parameter knobs that directly affect split gain -->
+          <div class="glass-card p-4 space-y-3">
+            <span class="text-xs font-mono text-gold font-bold">Interactive Split Regularizers</span>
+            <div class="space-y-3 text-xs">
+              <div>
+                <div class="flex justify-between text-textMuted mb-1 font-mono">
+                  <span>Pruning Penalty $\gamma$ (gamma):</span>
+                  <span id="splitGammaVal" class="text-gold font-bold">1.0</span>
+                </div>
+                <input type="range" id="splitGammaSlider" class="slider" min="0" max="15" step="0.5" value="1.0">
+              </div>
+              <div>
+                <div class="flex justify-between text-textMuted mb-1 font-mono">
+                  <span>L2 Penalty $\lambda$ (lambda):</span>
+                  <span id="splitLambdaVal" class="text-lavender font-bold">1.0</span>
+                </div>
+                <input type="range" id="splitLambdaSlider" class="slider" min="0" max="10" step="0.5" value="1.0">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: OPTIMAL LEAF WEIGHTS & REGULARIZATION (L1 vs L2) -->
+<section class="py-24 px-6 border-t border-white/5 bg-surface/30">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-8">
+      <span class="text-xs font-mono font-bold tracking-widest text-accent uppercase">05 / Leaf Value Optimization</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold text-white mt-1">Analytical Leaf Weights & Shrinkage</h2>
+      <p class="text-textMuted mt-2 max-w-3xl">
+        Once tree structure is fixed, what numerical value $w_j^*$ is placed in each leaf? See how <span class="text-lavender font-semibold">$\lambda$ (Ridge)</span> shrinks magnitude smoothly, while <span class="text-coral font-semibold">$\alpha$ (Lasso)</span> creates exact zero-weights through soft-thresholding.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <!-- Interactive Canvas -->
+      <div class="lg:col-span-7 canvas-card p-6">
+        <div class="flex items-center justify-between mb-3 text-xs font-mono text-textMuted">
+          <span>Leaf Weight $w^*$ vs Cumulative Gradient $G = \sum g_i$</span>
+          <span class="text-mint font-bold" id="optimalWDisplay">w* = -0.742</span>
+        </div>
+        <div class="w-full h-[340px] relative">
+          <canvas id="leafWeightCanvas" class="w-full h-full"></canvas>
+        </div>
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <div class="flex justify-between text-xs font-mono text-textMuted mb-1">
+              <span>L2 Regularizer $\lambda$ (lambda):</span>
+              <span id="leafLambdaVal" class="text-lavender font-bold">2.0</span>
+            </div>
+            <input type="range" id="leafLambdaSlider" class="slider" min="0" max="20" step="0.5" value="2.0">
+          </div>
+          <div>
+            <div class="flex justify-between text-xs font-mono text-textMuted mb-1">
+              <span>L1 Regularizer $\alpha$ (alpha):</span>
+              <span id="leafAlphaVal" class="text-coral font-bold">1.5</span>
+            </div>
+            <input type="range" id="leafAlphaSlider" class="slider" min="0" max="10" step="0.5" value="1.5">
+          </div>
+        </div>
+      </div>
+
+      <!-- Mathematical formula and Insights -->
+      <div class="lg:col-span-5 space-y-4">
+        <div class="glass-card p-6">
+          <h3 class="text-sm font-bold text-white uppercase font-mono tracking-wider mb-2">The Closed-Form Solution</h3>
+          <div class="formula-box p-4 text-xs text-gold leading-relaxed mb-4">
+            $$w_j^* = -\text{sign}(G_j) \frac{\max(0, \; |G_j| - \alpha)}{H_j + \lambda}$$
+          </div>
+          <div class="space-y-3 text-xs text-textMuted">
+            <div class="flex items-start gap-2">
+              <span class="text-lavender font-bold">L2 ($\lambda$):</span>
+              <span>Smoothly diminishes extreme leaf scores without zeroing them out. Essential when individual leaves have few samples or high gradient noise.</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-coral font-bold">L1 ($\alpha$):</span>
+              <span>Creates a <strong class="text-white">dead-band</strong>: if $|G_j| \le \alpha$, the leaf score collapses to exactly $0.0$. Perfect for ultra-sparse, noisy feature spaces.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-accent/5 border border-accent/20 text-xs text-textMain leading-relaxed">
+          <strong class="text-accent">Core Mathematical Intuition:</strong> In standard gradient descent, you take thousands of tiny steps. In XGBoost, <strong class="text-white">every leaf finds its globally optimal output in a single arithmetic operation</strong>. That is why XGBoost converges in tens of trees rather than thousands!
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6: HYPERPARAMETER DEEP DIVE (INTERACTIVE COMPARISONS) -->
+<section id="hyperparams" class="py-24 px-6 border-t border-white/5">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-12">
+      <span class="text-xs font-mono font-bold tracking-widest text-accent uppercase">06 / Hyperparameter Mechanics</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold text-white mt-1">The Critical Hyperparameters Demystified</h2>
+      <p class="text-textMuted mt-2 max-w-3xl">
+        Every parameter in XGBoost is an explicit guardrail against overfitting. Inspect the mechanics of the three most influential hyperparameter groups.
+      </p>
+    </div>
+
+    <!-- 3 Tabbed Hyperparameter Focus Cards -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Card 1: Learning Rate & Trees -->
+      <div class="canvas-card p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-mono text-gold font-bold">LEARNING & CONVERGENCE</span>
+            <span class="px-2 py-0.5 rounded bg-gold/10 text-gold text-[10px] font-mono">eta / n_estimators</span>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Learning Rate ($\eta$) & Shrinkage</h3>
+          <p class="text-xs text-textMuted leading-relaxed mb-4">
+            $\eta$ scales each tree's contribution: $F_m = F_{m-1} + \eta f_m$. High $\eta$ converges rapidly but oscillates; low $\eta$ generalizes far better but demands more boosting rounds.
+          </p>
+          <div class="h-[180px] w-full rounded-lg bg-bg/80 border border-white/5 relative overflow-hidden mb-4">
+            <canvas id="lrDemoCanvas" class="w-full h-full"></canvas>
+          </div>
+        </div>
+        <div class="space-y-2 pt-2 border-t border-white/5">
+          <div class="flex justify-between text-xs font-mono text-textMuted">
+            <span>Test $\eta$:</span>
+            <span id="lrDemoVal" class="text-gold font-bold">0.10</span>
+          </div>
+          <input type="range" id="lrDemoSlider" class="slider" min="0.02" max="1.0" step="0.02" value="0.10">
+        </div>
+      </div>
+
+      <!-- Card 2: Tree Complexity -->
+      <div class="canvas-card p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-mono text-accent font-bold">TREE ARCHITECTURE</span>
+            <span class="px-2 py-0.5 rounded bg-accent/10 text-accent text-[10px] font-mono">depth / min_child</span>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">max_depth & min_child_weight</h3>
+          <p class="text-xs text-textMuted leading-relaxed mb-4">
+            `max_depth` limits feature interaction order. `min_child_weight` ($\sum h_i$) prevents creating leaves with too little hessian sum (sample support), stopping micro-splits.
+          </p>
+          <div class="h-[180px] w-full rounded-lg bg-bg/80 border border-white/5 relative overflow-hidden mb-4">
+            <canvas id="depthDemoCanvas" class="w-full h-full"></canvas>
+          </div>
+        </div>
+        <div class="space-y-2 pt-2 border-t border-white/5">
+          <div class="flex justify-between text-xs font-mono text-textMuted">
+            <span>Max Depth:</span>
+            <span id="depthDemoVal" class="text-accent font-bold">3</span>
+          </div>
+          <input type="range" id="depthDemoSlider" class="slider" min="1" max="8" step="1" value="3">
+        </div>
+      </div>
+
+      <!-- Card 3: Stochastic Controls -->
+      <div class="canvas-card p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-mono text-mint font-bold">STOCHASTIC SAMPLING</span>
+            <span class="px-2 py-0.5 rounded bg-mint/10 text-mint text-[10px] font-mono">subsample / colsample</span>
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">Row & Column Subsampling</h3>
+          <p class="text-xs text-textMuted leading-relaxed mb-4">
+            Injects Random Forest-style bagging randomness into boosting. Trains each tree on a random subset of rows and evaluates splits on random subsets of columns to decorrelate trees.
+          </p>
+          <div class="h-[180px] w-full rounded-lg bg-bg/80 border border-white/5 relative overflow-hidden mb-4">
+            <canvas id="subsampleDemoCanvas" class="w-full h-full"></canvas>
+          </div>
+        </div>
+        <div class="space-y-2 pt-2 border-t border-white/5">
+          <div class="flex justify-between text-xs font-mono text-textMuted">
+            <span>Subsample Ratio:</span>
+            <span id="subsampleDemoVal" class="text-mint font-bold">0.80</span>
+          </div>
+          <input type="range" id="subsampleDemoSlider" class="slider" min="0.3" max="1.0" step="0.05" value="0.80">
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7: THE ULTIMATE XGBOOST WORKBENCH (INTERACTIVE PLAYGROUND) -->
+<section id="workbench" class="py-24 px-6 border-t border-white/5 bg-gradient-to-b from-surface/20 to-bg">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 border border-gold/30 text-gold text-xs font-mono mb-2">
+          ★ INTERACTIVE LABORATORY
+        </div>
+        <h2 class="text-3xl md:text-5xl font-black text-white">Full XGBoost Hyperparameter Workbench</h2>
+        <p class="text-textMuted mt-2 max-w-3xl">
+          Tweak any knob in real time. Watch the algorithmic boosting engine simulate directly in your browser, fitting the function and tracking <strong class="text-accent">Training Loss</strong> vs <strong class="text-coral">Validation Loss</strong> over iterations.
+        </p>
+      </div>
+
+      <!-- Dataset & Preset switchers -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-mono text-textMuted">DATASET:</span>
+        <select id="datasetSelect" class="bg-surface text-xs font-semibold px-3 py-2 rounded-lg border border-white/10 text-white outline-none focus:border-accent">
+          <option value="sine">Non-Linear Sine Waves</option>
+          <option value="step">Discontinuous Step Function</option>
+          <option value="poly">Complex Multi-Modal Wave</option>
+        </select>
+        <button id="wbResetBtn" class="interactive-btn px-4 py-2 rounded-lg bg-surface border border-white/10 text-xs text-textMuted hover:text-white">
+          Reset Defaults
+        </button>
+      </div>
+    </div>
+
+    <!-- WORKBENCH GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- LEFT CONTROLS SIDEBAR (4 cols) -->
+      <div class="lg:col-span-4 space-y-4">
+        
+        <!-- Parameter Knobs Container -->
+        <div class="glass-card p-5 space-y-5">
+          <div class="flex items-center justify-between border-b border-white/5 pb-2">
+            <span class="text-xs font-mono text-accent font-bold uppercase tracking-wider">Hyperparameter Cockpit</span>
+            <span class="text-[10px] font-mono text-textMuted">Live Re-simulation</span>
+          </div>
+
+          <!-- Group 1: Boosting Speed & Rounds -->
+          <div class="space-y-3">
+            <span class="text-[11px] font-mono text-gold font-semibold uppercase block">1. Boosting Horizon</span>
+            <div>
+              <div class="flex justify-between text-xs font-mono text-textMuted mb-1">
+                <span>learning_rate ($\eta$):</span>
+                <span id="wbEtaVal" class="text-gold font-bold">0.15</span>
+              </div>
+              <input type="range" id="wbEta" class="slider" min="0.01" max="1.0" step="0.01" value="0.15">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs font-mono text-textMuted mb-1">
+                <span>n_estimators (Trees):</span>
+                <span id="wbTreesVal" class="text-gold font-bold">35</span>
+              </div>
+              <input type="range" id="wbTrees" class="slider" min="5" max="80" step="1" value="35">
+            </div>
+          </div>
+
+          <!-- Group 2: Tree Complexity -->
+          <div class="space-y-3 pt-3 border-t border-white/5">
+            <span class="text-[11px] font-mono text-accent font-semibold uppercase block">2. Tree Structure Constraints</span>
+            <div>
+              <div class="flex justify-between text-xs font-mono text-textMuted mb-1">
+                <span>max_depth:</span>
+                <span id="wbDepthVal" class="text-accent font-bold">3</span>
+              </div>
+              <input type="range" id="wbDepth" class="slider" min="1" max="7" step="1" value="3">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs font-mono text-textMuted mb-1">
+                <span>min_child_weight:</span>
+                <span id="wbMinChildVal" class="text-accent font-bold">1.0</span>
+              </div>
+              <input type="range" id="wbMinChild" class="slider" min="0.5" max="10.0" step="0.5" value="1.0">
+            </div>
+          </div>
+
+          <!-- Group 3: Regularization Trio -->
+          <div class="space-y-3 pt-3 border-t border-white/5">
+            <span class="text-[11px] font-mono text-lavender font-semibold uppercase block">3. Regularization Trio</span>
+            <div>
+              <div class="flex justify-between text-xs font-mono text-textMuted mb-1">
+                <span>gamma ($\gamma$, Min Gain):</span>
+                <span id="wbGammaVal" class="text-lavender font-bold">0.0</span>
+              </div>
+              <input type="range" id="wbGamma" class="slider" min="0.0" max="5.0" step="0.1" value="0.0">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs font-mono text-textMuted mb-1">
+                <span>reg_lambda ($\lambda$, L2):</span>
+                <span id="wbLambdaVal" class="text-lavender font-bold">1.0</span>
+              </div>
+              <input type="range" id="wbLambda" class="slider" min="0.0" max="15.0" step="0.5" value="1.0">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs font-mono text-textMuted mb-1">
+                <span>reg_alpha ($\alpha$, L1):</span>
+                <span id="wbAlphaVal" class="text-coral font-bold">0.0</span>
+              </div>
+              <input type="range" id="wbAlpha" class="slider" min="0.0" max="10.0" step="0.5" value="0.0">
+            </div>
+          </div>
+
+          <!-- Group 4: Subsampling -->
+          <div class="space-y-3 pt-3 border-t border-white/5">
+            <span class="text-[11px] font-mono text-mint font-semibold uppercase block">4. Stochastic Randomness</span>
+            <div>
+              <div class="flex justify-between text-xs font-mono text-textMuted mb-1">
+                <span>subsample (Rows):</span>
+                <span id="wbSubsampleVal" class="text-mint font-bold">1.0</span>
+              </div>
+              <input type="range" id="wbSubsample" class="slider" min="0.3" max="1.0" step="0.05" value="1.0">
+            </div>
+          </div>
+
+          <!-- Early stopping toggle -->
+          <div class="pt-3 border-t border-white/5 flex items-center justify-between">
+            <span class="text-xs text-textMain font-medium">Early Stopping (Patience = 8)</span>
+            <input type="checkbox" id="wbEarlyStopToggle" class="w-4 h-4 accent-accent rounded" checked>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT CANVASES & METRICS DISPLAY (8 cols) -->
+      <div class="lg:col-span-8 space-y-6">
+        
+        <!-- Live Diagnostic Status Banner -->
+        <div id="wbStatusBanner" class="p-4 rounded-xl border border-mint/30 bg-mint/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
+          <div class="flex items-center gap-3">
+            <span id="wbStatusDot" class="w-3.5 h-3.5 rounded-full bg-mint animate-pulse shrink-0"></span>
+            <div>
+              <div class="text-xs font-mono font-bold uppercase text-white" id="wbStatusTitle">HEALTHY GENERALIZATION FIT</div>
+              <div class="text-xs text-textMuted mt-0.5" id="wbStatusSub">Low training and validation loss with narrow generalization gap.</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 text-xs font-mono shrink-0">
+            <div>Train MSE: <strong class="text-accent" id="wbTrainMseVal">0.024</strong></div>
+            <div>Val MSE: <strong class="text-coral" id="wbValMseVal">0.029</strong></div>
+          </div>
+        </div>
+
+        <!-- Canvas 1: Prediction Curve vs Ground Truth & Data Points -->
+        <div class="canvas-card p-5">
+          <div class="flex items-center justify-between mb-3 text-xs font-mono">
+            <span class="text-textMuted">Data Points & XGBoost Ensemble Prediction $\hat{F}(x)$</span>
+            <div class="flex items-center gap-4">
+              <span class="flex items-center gap-1.5 text-accent"><span class="w-2.5 h-2.5 rounded-full bg-accent inline-block"></span> Train ($N=42$)</span>
+              <span class="flex items-center gap-1.5 text-coral"><span class="w-2.5 h-2.5 rounded-full bg-coral inline-block"></span> Val ($N=22$)</span>
+              <span class="flex items-center gap-1.5 text-gold"><span class="w-3 h-0.5 bg-gold inline-block"></span> Ensemble $\hat{y}$</span>
+            </div>
+          </div>
+          <div class="w-full h-[320px] relative">
+            <canvas id="wbPredCanvas" class="w-full h-full"></canvas>
+          </div>
+        </div>
+
+        <!-- Canvas 2: Train Loss vs Validation Loss Curves (Overfitting Tracker) -->
+        <div class="canvas-card p-5">
+          <div class="flex items-center justify-between mb-3 text-xs font-mono">
+            <span class="text-textMuted">Loss Curves Over Boosting Iterations (Train vs Validation)</span>
+            <div class="flex items-center gap-4">
+              <span class="flex items-center gap-1.5 text-accent"><span class="w-3 h-0.5 bg-accent inline-block"></span> Train Loss</span>
+              <span class="flex items-center gap-1.5 text-coral"><span class="w-3 h-0.5 bg-coral inline-block"></span> Validation Loss</span>
+              <span class="flex items-center gap-1.5 text-mint"><span class="w-3 h-0.5 border-t border-dashed border-mint inline-block"></span> Early Stop Best Iter</span>
+            </div>
+          </div>
+          <div class="w-full h-[240px] relative">
+            <canvas id="wbLossCanvas" class="w-full h-full"></canvas>
+          </div>
+        </div>
+
+        <!-- Diagnostic Summary Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
+          <div class="p-3.5 rounded-xl bg-surface border border-white/5">
+            <span class="text-textMuted block">GENERALIZATION GAP:</span>
+            <span class="text-lg font-bold text-white mt-1 block" id="wbGapVal">1.21x</span>
+            <span class="text-[10px] text-textMuted">Ratio Val/Train</span>
+          </div>
+          <div class="p-3.5 rounded-xl bg-surface border border-white/5">
+            <span class="text-textMuted block">EFFECTIVE TREES:</span>
+            <span class="text-lg font-bold text-gold mt-1 block" id="wbEffectiveTreesVal">35 / 35</span>
+            <span class="text-[10px] text-textMuted">Trees before early stop</span>
+          </div>
+          <div class="p-3.5 rounded-xl bg-surface border border-white/5">
+            <span class="text-textMuted block">TOTAL LEAF SPLITS:</span>
+            <span class="text-lg font-bold text-lavender mt-1 block" id="wbTotalLeavesVal">210</span>
+            <span class="text-[10px] text-textMuted">Ensemble complexity</span>
+          </div>
+          <div class="p-3.5 rounded-xl bg-surface border border-white/5">
+            <span class="text-textMuted block">OVERFITTING RISK:</span>
+            <span class="text-lg font-bold text-mint mt-1 block" id="wbOverfitScore">LOW</span>
+            <span class="text-[10px] text-textMuted">Algorithmic diagnosis</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 8: THE SYSTEMATIC 5-STAGE TUNING PLAYBOOK -->
+<section id="tuning-guide" class="py-24 px-6 border-t border-white/5 bg-surface/30">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-12">
+      <span class="text-xs font-mono font-bold tracking-widest text-accent uppercase">07 / Battle-Tested Methodology</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold text-white mt-1">The 5-Stage Professional Tuning Sequence</h2>
+      <p class="text-textMuted mt-2 max-w-3xl">
+        Beginners tune all hyperparameters simultaneously with random search and wonder why they overfit. Experienced ML practitioners tune in a <strong class="text-white">strict hierarchical order</strong>.
+      </p>
+    </div>
+
+    <!-- Stepper layout -->
+    <div class="space-y-6">
+      
+      <!-- Stage 1 -->
+      <div class="canvas-card p-6 border-l-4 border-l-gold">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-gold/20 text-gold font-mono font-bold text-xs flex items-center justify-center">1</span>
+            <h3 class="text-lg font-bold text-white">Stage 1: Establish Fast Baseline with High Learning Rate</h3>
+          </div>
+          <span class="text-xs font-mono px-3 py-1 rounded bg-bg text-gold border border-gold/30">Knobs: eta = 0.1 to 0.2, n_estimators = 200</span>
+        </div>
+        <p class="text-xs text-textMuted leading-relaxed mb-3">
+          Never tune depth and regularization with a tiny learning rate ($\eta = 0.01$). It wastes immense compute. Fix $\eta \approx 0.1 - 0.15$ with early stopping to find your working baseline in seconds.
+        </p>
+        <div class="p-3 rounded-lg bg-bg/60 text-xs font-mono text-textMuted flex items-center justify-between">
+          <span>Target Metric:</span>
+          <span class="text-white">Establish baseline Validation ROC-AUC or RMSE in under 100-200 iterations.</span>
+        </div>
+      </div>
+
+      <!-- Stage 2 -->
+      <div class="canvas-card p-6 border-l-4 border-l-accent">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-accent/20 text-accent font-mono font-bold text-xs flex items-center justify-center">2</span>
+            <h3 class="text-lg font-bold text-white">Stage 2: Tune Tree Architecture Knobs (`max_depth` & `min_child_weight`)</h3>
+          </div>
+          <span class="text-xs font-mono px-3 py-1 rounded bg-bg text-accent border border-accent/30">Grid: depth: [3, 4, 6, 8], min_child: [1, 3, 5, 10]</span>
+        </div>
+        <p class="text-xs text-textMuted leading-relaxed mb-3">
+          These two parameters have the single largest impact on bias-variance trade-off. Start with `max_depth: 3-6`. If classes are heavily imbalanced or dataset is noisy, raise `min_child_weight` to prevent overfitting to rare instances.
+        </p>
+        <div class="p-3 rounded-lg bg-bg/60 text-xs font-mono text-textMuted flex items-center justify-between">
+          <span>Optimization Tip:</span>
+          <span class="text-accent">Higher depth allows higher-order feature interactions, but dramatically increases variance.</span>
+        </div>
+      </div>
+
+      <!-- Stage 3 -->
+      <div class="canvas-card p-6 border-l-4 border-l-lavender">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-lavender/20 text-lavender font-mono font-bold text-xs flex items-center justify-center">3</span>
+            <h3 class="text-lg font-bold text-white">Stage 3: Tune Pruning Threshold (`gamma`)</h3>
+          </div>
+          <span class="text-xs font-mono px-3 py-1 rounded bg-bg text-lavender border border-lavender/30">Range: gamma = [0.1, 0.5, 1.0, 5.0]</span>
+        </div>
+        <p class="text-xs text-textMuted leading-relaxed mb-3">
+          $\gamma$ sets the minimum gain required to complete a split. Unlike `max_depth` which stops tree growth uniformly, $\gamma$ allows a tree to grow deep if a split is truly informative, but chops off weak exploratory branches.
+        </p>
+      </div>
+
+      <!-- Stage 4 -->
+      <div class="canvas-card p-6 border-l-4 border-l-mint">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-mint/20 text-mint font-mono font-bold text-xs flex items-center justify-center">4</span>
+            <h3 class="text-lg font-bold text-white">Stage 4: Tune Subsampling (`subsample` & `colsample_bytree`)</h3>
+          </div>
+          <span class="text-xs font-mono px-3 py-1 rounded bg-bg text-mint border border-mint/30">Recommended: [0.6, 0.7, 0.8, 0.9]</span>
+        </div>
+        <p class="text-xs text-textMuted leading-relaxed mb-3">
+          Subsampling rows decorrelates consecutive trees and acts as robust empirical regularization. Feature subsampling (`colsample_bytree: 0.7-0.8`) is crucial when you have correlated features.
+        </p>
+      </div>
+
+      <!-- Stage 5 -->
+      <div class="canvas-card p-6 border-l-4 border-l-coral">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+          <div class="flex items-center gap-3">
+            <span class="w-7 h-7 rounded-full bg-coral/20 text-coral font-mono font-bold text-xs flex items-center justify-center">5</span>
+            <h3 class="text-lg font-bold text-white">Stage 5: Final Polish: Drop Learning Rate & Scale Trees</h3>
+          </div>
+          <span class="text-xs font-mono px-3 py-1 rounded bg-bg text-coral border border-coral/30">Action: Drop eta to 0.01 - 0.03, set n_estimators = 2000+</span>
+        </div>
+        <p class="text-xs text-textMuted leading-relaxed mb-3">
+          Once your tree shape and regularization parameters are locked in, cut the learning rate by a factor of 5 to 10 ($\eta \to 0.01 - 0.03$) and proportionally increase `n_estimators` with `early_stopping_rounds: 30-50`. This unlocks the final 1-3% accuracy gain!
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Diagnostic Troubleshooter Table -->
+    <div class="mt-12 glass-card p-6">
+      <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+        <span class="text-gold">⚡</span> Production Diagnostic Matrix
+      </h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr class="border-b border-white/10 text-textMuted">
+              <th class="py-3 px-4">SYMPTOM</th>
+              <th class="py-3 px-4">PRIMARY DIAGNOSIS</th>
+              <th class="py-3 px-4">FIRST 3 KNOBS TO TURN</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5 text-textMain">
+            <tr>
+              <td class="py-3 px-4 text-coral font-bold">Severe Overfitting</td>
+              <td class="py-3 px-4 text-textMuted">Train loss is near 0, but validation loss diverges upwards</td>
+              <td class="py-3 px-4 text-accent">1. Lower `max_depth` (e.g. 3) <br>2. Raise `min_child_weight` (5-10) <br>3. Set `subsample: 0.8` & `colsample_bytree: 0.8`</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 text-gold font-bold">Severe Underfitting</td>
+              <td class="py-3 px-4 text-textMuted">Both train and val loss stagnate at unacceptably high values</td>
+              <td class="py-3 px-4 text-gold">1. Increase `max_depth` (e.g. 6-8) <br>2. Decrease `min_child_weight` <br>3. Lower $\gamma$ and $\lambda$ to 0</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 text-lavender font-bold">Training Too Slow</td>
+              <td class="py-3 px-4 text-textMuted">Iteration runtime is impractical for production datasets</td>
+              <td class="py-3 px-4 text-mint">1. Set `tree_method='hist'` (Histogram binning) <br>2. Lower `subsample` & `max_depth` <br>3. Use GPU with `device='cuda'`</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4 text-mint font-bold">Extreme Imbalance</td>
+              <td class="py-3 px-4 text-textMuted">Minority class (< 1%) recall is nearly zero</td>
+              <td class="py-3 px-4 text-mint">1. Set `scale_pos_weight = N_neg / N_pos` <br>2. Use `eval_metric='aucpr'` <br>3. Raise `min_child_weight`</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 9: CODE REFERENCE (PRODUCTION IMPLEMENTATIONS) -->
+<section id="code-lab" class="py-24 px-6 border-t border-white/5">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-8">
+      <span class="text-xs font-mono font-bold tracking-widest text-accent uppercase">08 / Implementation</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold text-white mt-1">Production Code Implementations</h2>
+      <p class="text-textMuted mt-2 max-w-3xl">
+        Switch between the low-level native C++ backend API, Scikit-Learn wrapper, and modern Optuna Bayesian optimization pipeline.
+      </p>
+    </div>
+
+    <!-- Code Tab Switcher -->
+    <div class="flex items-center gap-2 mb-4">
+      <button onclick="switchCodeTab(0)" class="tab-btn px-4 py-2 rounded-lg bg-surface border border-white/10 text-xs font-mono font-semibold text-textMuted hover:text-white active" id="codeTab0">
+        1. XGBoost Native API (DMatrix)
+      </button>
+      <button onclick="switchCodeTab(1)" class="tab-btn px-4 py-2 rounded-lg bg-surface border border-white/10 text-xs font-mono font-semibold text-textMuted hover:text-white" id="codeTab1">
+        2. Scikit-Learn Wrapper API
+      </button>
+      <button onclick="switchCodeTab(2)" class="tab-btn px-4 py-2 rounded-lg bg-surface border border-white/10 text-xs font-mono font-semibold text-textMuted hover:text-white" id="codeTab2">
+        3. Automated Optuna Tuning Pipeline
+      </button>
+    </div>
+
+    <!-- Code Window Container -->
+    <div class="canvas-card p-6 font-mono text-xs relative">
+      <button onclick="copyCode()" class="absolute top-4 right-4 px-3 py-1.5 rounded bg-surfaceLight border border-white/10 text-textMuted hover:text-white text-[11px] flex items-center gap-1.5 transition" id="copyBtn">
+        <span>📋</span> Copy Snippet
+      </button>
+      
+      <pre class="overflow-x-auto text-textMain leading-relaxed py-2" id="codeDisplay"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 10: MASTERY QUIZ (10 ADVANCED QUESTIONS) -->
+<section id="quiz" class="py-24 px-6 border-t border-white/5 bg-surface/30">
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-12">
+      <span class="text-xs font-mono font-bold tracking-widest text-accent uppercase">09 / Knowledge Verification</span>
+      <h2 class="text-3xl md:text-5xl font-extrabold text-white mt-1">XGBoost Algorithmic Mastery Quiz</h2>
+      <p class="text-textMuted mt-2 max-w-xl mx-auto text-sm">
+        10 rigorous questions testing your real algorithmic depth. Explanations provided immediately upon submission.
+      </p>
+    </div>
+
+    <!-- Questions Container -->
+    <div class="space-y-6" id="quizContainer">
+      <!-- Generated via JS -->
+    </div>
+
+    <!-- Submit & Score Card -->
+    <div class="mt-12 text-center">
+      <button id="quizSubmitBtn" class="interactive-btn px-8 py-3.5 rounded-xl bg-accent text-bg font-bold text-sm shadow-lg shadow-accent/20">
+        Grade My Mastery Exam
+      </button>
+
+      <div id="quizResultBox" class="mt-6 p-6 rounded-2xl glass-card hidden max-w-md mx-auto text-center space-y-2">
+        <div class="text-2xl font-black text-white" id="quizScoreText">Score: 10 / 10</div>
+        <div class="text-xs text-textMuted" id="quizFeedbackText">Grandmaster level understanding! You know the algorithm inside out.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="py-12 px-6 border-t border-white/5 bg-bg text-center text-xs text-textDark font-mono space-y-2">
+  <p class="text-textMuted">Built with Vanilla Canvas & Tailwind CSS — Procedural 3Blue1Brown Algorithmic Visualizer</p>
+  <p>Single, fully self-contained HTML bundle with KaTeX mathematical rendering.</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!--                  COMPLETE SCRIPT ENGINE                        -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<script>
+// --- GLOBAL UTILITIES & 3B1B EASING ---
+const EASE = {
+  inOut: t => t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t,
+  outCubic: t => 1 - Math.pow(1 - t, 3),
+  outQuart: t => 1 - Math.pow(1 - t, 4),
+  elastic: t => t === 0 || t === 1 ? t : Math.pow(2, -10*t) * Math.sin((t - 0.075)*2*Math.PI/0.3) + 1
+};
+
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx._w = rect.width;
+  ctx._h = rect.height;
+  return ctx;
+}
+
+// 3B1B Dark Theme Palette
+const C = {
+  bg: '#080915',
+  card: '#0f1123',
+  grid: 'rgba(255, 255, 255, 0.04)',
+  gridLine: 'rgba(255, 255, 255, 0.08)',
+  accent: '#38bdf8',       // Cyan
+  gold: '#facc15',         // Gold
+  coral: '#f43f5e',        // Rose
+  mint: '#10b981',         // Emerald
+  lavender: '#a855f7',     // Purple
+  text: '#f1f5f9',
+  textMuted: '#94a3b8',
+  textDark: '#475569'
+};
+
+function drawCanvasGrid(ctx, W, H, pad, xMin, xMax, yMin, yMax, xTicks=6, yTicks=5) {
+  ctx.strokeStyle = C.grid;
+  ctx.lineWidth = 1;
+  
+  for (let i = 0; i <= xTicks; i++) {
+    const x = pad.l + (i / xTicks) * (W - pad.l - pad.r);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+  for (let i = 0; i <= yTicks; i++) {
+    const y = pad.t + (i / yTicks) * (H - pad.t - pad.b);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+
+  // Numerical Ticks
+  ctx.fillStyle = C.textDark;
+  ctx.font = '9px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= xTicks; i++) {
+    const x = pad.l + (i / xTicks) * (W - pad.l - pad.r);
+    const val = xMin + (i / xTicks) * (xMax - xMin);
+    ctx.fillText(val.toFixed(1), x, H - pad.b + 13);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= yTicks; i++) {
+    const y = pad.t + (i / yTicks) * (H - pad.t - pad.b);
+    const val = yMax - (i / yTicks) * (yMax - yMin);
+    ctx.fillText(val.toFixed(1), pad.l - 6, y + 3);
+  }
+}
+
+function mapVal(v, inMin, inMax, outMin, outMax) {
+  return outMin + ((v - inMin) / (inMax - inMin)) * (outMax - outMin);
+}
+
+// Draw smooth 3B1B glow lines
+function drawGlowLine(ctx, pts, color, width=2, glowColor=null) {
+  if (pts.length < 2) return;
+  ctx.save();
+  // Glow pass
+  ctx.strokeStyle = glowColor || color;
+  ctx.lineWidth = width * 3.5;
+  ctx.globalAlpha = 0.15;
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.stroke();
+
+  // Core line
+  ctx.lineWidth = width;
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// Scroll progress bar
+window.addEventListener('scroll', () => {
+  const winScroll = document.documentElement.scrollTop;
+  const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const scrolled = (winScroll / height) * 100;
+  document.getElementById('scrollProgress').style.width = scrolled + '%';
+});
+
+// KaTeX auto-render helper
+function triggerMathRender() {
+  if (window.renderMathInElement) {
+    window.renderMathInElement(document.body, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false}
+      ],
+      throwOnError: false
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// HERO CANVAS: 3B1B Particle & Gradient Field Animation
+// ─────────────────────────────────────────────────────────────
+(function initHeroCanvas() {
+  const canvas = document.getElementById('heroCanvas');
+  const ctx = setupCanvas(canvas);
+  let W = ctx._w, H = ctx._h;
+  
+  const particles = Array.from({ length: 65 }, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4,
+    r: 1 + Math.random() * 2,
+    color: Math.random() > 0.4 ? C.accent : C.gold,
+    alpha: 0.1 + Math.random() * 0.4
+  }));
+
+  function render() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Vector connections
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 110) {
+          ctx.strokeStyle = C.accent;
+          ctx.globalAlpha = (1 - dist / 110) * 0.12;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Dots
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.alpha;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(render);
+  }
+  render();
+
+  window.addEventListener('resize', () => {
+    setupCanvas(canvas);
+    W = canvas.getBoundingClientRect().width;
+    H = canvas.getBoundingClientRect().height;
+  });
+})();
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 1: EVOLUTION TAB SWITCHER
+// ─────────────────────────────────────────────────────────────
+const evoData = [
+  {
+    badge: 'PARADIGM 1: BASELINE',
+    title: 'Single Decision Tree (CART / C4.5)',
+    desc: 'Recursively partitions input space using greedy threshold splits. Highly prone to fitting dataset noise and has no mechanism to correct mistakes made at top nodes.',
+    pro: 'Extremely transparent, fast inference, invariant to monotonic scaling.',
+    con: 'Catastrophic variance; high instability on slight data perturbations.',
+    color: '#38bdf8'
+  },
+  {
+    badge: 'PARADIGM 2: BAGGING',
+    title: 'Random Forest (Breiman 2001)',
+    desc: 'Builds hundreds of deep, unpruned trees in parallel on bootstrap samples with random feature selection. Averages predictions to dramatically suppress model variance.',
+    pro: 'Reduces variance without increasing bias; resilient to hyperparameter drift.',
+    con: 'Cannot correct structural bias; trees are trained completely independently.',
+    color: '#10b981'
+  },
+  {
+    badge: 'PARADIGM 3: BOOSTING',
+    title: 'Standard Gradient Boosting (Friedman 2001)',
+    desc: 'Sequential additive modeling where each tree fits the negative gradient (residuals) of the loss function using 1st-order gradient descent.',
+    pro: 'Dramatically reduces bias and models complex non-linear frontiers.',
+    con: 'Slow convergence; lacks principled leaf regularization; no 2nd-order curvature.',
+    color: '#facc15'
+  },
+  {
+    badge: 'PARADIGM 4: EXTREME BOOSTING',
+    title: 'XGBoost (Chen & Guestrin 2016)',
+    desc: 'Newton-Raphson boosting in functional space. Utilizes 2nd-order Taylor expansion (gradients + hessians) with closed-form leaf weights, built-in L1/L2 penalties, and weighted quantile sketch.',
+    pro: 'Fastest convergence, analytical leaf weights, three-tier regularization.',
+    con: 'Requires thoughtful tuning of regularizers and learning rate.',
+    color: '#a855f7'
+  }
+];
+
+function switchEvolutionTab(idx) {
+  document.querySelectorAll('.evo-tab').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+    b.style.borderColor = i === idx ? evoData[idx].color : '';
+  });
+  const d = evoData[idx];
+  document.getElementById('evo-badge').textContent = d.badge;
+  document.getElementById('evo-badge').style.backgroundColor = `${d.color}20`;
+  document.getElementById('evo-badge').style.color = d.color;
+  document.getElementById('evo-title').textContent = d.title;
+  document.getElementById('evo-desc').textContent = d.desc;
+  document.getElementById('evo-pro').textContent = d.pro;
+  document.getElementById('evo-con').textContent = d.con;
+  drawEvoDiagram(idx);
+}
+
+function drawEvoDiagram(idx) {
+  const canvas = document.getElementById('evoCanvas');
+  const ctx = setupCanvas(canvas);
+  const W = ctx._w, H = ctx._h;
+  ctx.clearRect(0, 0, W, H);
+
+  if (idx === 0) {
+    drawMiniTree(ctx, W/2, 40, W/3, 50, 3, C.accent);
+  } else if (idx === 1) {
+    drawMiniTree(ctx, W*0.2, 40, W*0.12, 40, 2, C.mint);
+    drawMiniTree(ctx, W*0.5, 40, W*0.12, 40, 2, C.mint);
+    drawMiniTree(ctx, W*0.8, 40, W*0.12, 40, 2, C.mint);
+    ctx.fillStyle = C.textMuted;
+    ctx.font = '10px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText('Parallel Independent Trees → Mean Vote', W/2, H - 20);
+  } else if (idx === 2) {
+    for (let i = 0; i < 3; i++) {
+      const cx = 80 + i * 150;
+      drawMiniTree(ctx, cx, 50, 45, 35, 2, C.gold);
+      if (i < 2) {
+        ctx.strokeStyle = C.gold;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx + 45, 80);
+        ctx.lineTo(cx + 105, 80);
+        ctx.stroke();
+        ctx.fillText('+ Residuals', cx + 75, 70);
+      }
+    }
+  } else {
+    drawMiniTree(ctx, W/2, 35, W*0.35, 45, 3, C.lavender, true);
+    ctx.fillStyle = C.lavender;
+    ctx.font = '10px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText('Analytical Weights w* = -G / (H + λ) with γ Pruning', W/2, H - 15);
+  }
+}
+
+function drawMiniTree(ctx, x, y, dx, dy, depth, color, showMath=false) {
+  if (depth <= 0) return;
+  ctx.beginPath();
+  ctx.arc(x, y, 9, 0, Math.PI*2);
+  ctx.fillStyle = C.bg;
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  if (depth > 1) {
+    const nextY = y + dy;
+    const nextDx = dx * 0.55;
+    ctx.beginPath(); ctx.moveTo(x, y + 9); ctx.lineTo(x - dx*0.5, nextY - 9); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y + 9); ctx.lineTo(x + dx*0.5, nextY - 9); ctx.stroke();
+
+    drawMiniTree(ctx, x - dx*0.5, nextY, nextDx, dy, depth - 1, color, showMath);
+    drawMiniTree(ctx, x + dx*0.5, nextY, nextDx, dy, depth - 1, color, showMath);
+  } else if (showMath) {
+    ctx.fillStyle = C.gold;
+    ctx.font = '8px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText('w*', x, y + 20);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// DATASET GENERATION (Train & Validation Split)
+// ─────────────────────────────────────────────────────────────
+let RNG_SEED = 12345;
+function seededRng() {
+  RNG_SEED = (RNG_SEED * 9301 + 49297) % 233280;
+  return RNG_SEED / 233280;
+}
+
+function generateDataset(type='sine') {
+  RNG_SEED = 42;
+  const train = [], val = [];
+  const N_train = 42, N_val = 22;
+
+  function trueFn(x) {
+    if (type === 'step') {
+      return x < 2.0 ? -0.8 : x < 4.2 ? 0.9 : -0.2;
+    } else if (type === 'poly') {
+      return 0.8 * Math.sin(x*1.4) + 0.5 * Math.cos(x * 2.8) - 0.2 * (x - 3);
+    }
+    return Math.sin(x) + 0.45 * Math.sin(2.5 * x);
+  }
+
+  for (let i = 0; i < N_train; i++) {
+    const x = 0.2 + (i / (N_train - 1)) * 5.8;
+    const noise = (seededRng() - 0.5) * 0.55;
+    train.push({ x, y: trueFn(x) + noise });
+  }
+
+  RNG_SEED = 999;
+  for (let i = 0; i < N_val; i++) {
+    const x = 0.3 + (i / (N_val - 1)) * 5.6;
+    const noise = (seededRng() - 0.5) * 0.55;
+    val.push({ x, y: trueFn(x) + noise });
+  }
+
+  return { train, val, trueFn };
+}
+
+let CURRENT_DATA = generateDataset('sine');
+
+// ─────────────────────────────────────────────────────────────
+// BOOSTING SIMULATOR ENGINE (Pure JS 1D XGBoost with MSE)
+// ─────────────────────────────────────────────────────────────
+function fitXGBoost(trainData, valData, params) {
+  const {
+    eta = 0.2,
+    nEstimators = 30,
+    maxDepth = 3,
+    minChildWeight = 1.0,
+    gamma = 0.0,
+    lambda = 1.0,
+    alpha = 0.0,
+    subsample = 1.0,
+    earlyStopping = true,
+    patience = 8
+  } = params;
+
+  const yMean = trainData.reduce((s, d) => s + d.y, 0) / trainData.length;
+  let trainPreds = new Array(trainData.length).fill(yMean);
+  let valPreds = new Array(valData.length).fill(yMean);
+
+  const trees = [];
+  const trainLosses = [];
+  const valLosses = [];
+
+  let bestValLoss = Infinity;
+  let bestIter = 0;
+  let noImproveCount = 0;
+
+  for (let t = 0; t < nEstimators; t++) {
+    const instances = trainData.map((d, i) => ({
+      x: d.x,
+      y: d.y,
+      g: trainPreds[i] - d.y,
+      h: 1.0
+    }));
+
+    let sampled = instances;
+    if (subsample < 1.0) {
+      sampled = instances.filter(() => Math.random() <= subsample);
+      if (sampled.length < 5) sampled = instances;
+    }
+
+    const tree = buildNode(sampled, 0, maxDepth, minChildWeight, gamma, lambda, alpha);
+    trees.push(tree);
+
+    for (let i = 0; i < trainData.length; i++) {
+      trainPreds[i] += eta * predictTree(tree, trainData[i].x);
+    }
+    for (let i = 0; i < valData.length; i++) {
+      valPreds[i] += eta * predictTree(tree, valData[i].x);
+    }
+
+    const trLoss = trainData.reduce((s, d, i) => s + Math.pow(d.y - trainPreds[i], 2), 0) / trainData.length;
+    const vLoss = valData.reduce((s, d, i) => s + Math.pow(d.y - valPreds[i], 2), 0) / valData.length;
+    trainLosses.push(trLoss);
+    valLosses.push(vLoss);
+
+    if (vLoss < bestValLoss) {
+      bestValLoss = vLoss;
+      bestIter = t;
+      noImproveCount = 0;
+    } else {
+      noImproveCount++;
+    }
+
+    if (earlyStopping && noImproveCount >= patience && t >= 10) {
+      break;
+    }
+  }
+
+  return {
+    yMean,
+    trees,
+    trainLosses,
+    valLosses,
+    bestIter,
+    finalTrainPreds: trainPreds,
+    finalValPreds: valPreds
+  };
+}
+
+function buildNode(data, depth, maxDepth, minChildWeight, gamma, lambda, alpha) {
+  const G = data.reduce((s, d) => s + d.g, 0);
+  const H = data.reduce((s, d) => s + d.h, 0);
+
+  const calcWeight = (gSum, hSum) => {
+    if (Math.abs(gSum) <= alpha) return 0.0;
+    const sign = gSum > 0 ? 1 : -1;
+    return -sign * (Math.abs(gSum) - alpha) / (hSum + lambda);
+  };
+
+  const leafVal = calcWeight(G, H);
+
+  if (depth >= maxDepth || data.length < 4 || H < minChildWeight) {
+    return { isLeaf: true, weight: leafVal };
+  }
+
+  const sorted = [...data].sort((a, b) => a.x - b.x);
+  let bestGain = -Infinity;
+  let bestCut = null;
+  let bestLeft = null, bestRight = null;
+
+  const rootScore = (G * G) / (H + lambda);
+
+  let GL = 0, HL = 0;
+  for (let i = 0; i < sorted.length - 1; i++) {
+    GL += sorted[i].g;
+    HL += sorted[i].h;
+    const GR = G - GL;
+    const HR = H - HL;
+
+    if (HL < minChildWeight || HR < minChildWeight) continue;
+
+    const gain = 0.5 * ((GL * GL)/(HL + lambda) + (GR * GR)/(HR + lambda) - rootScore) - gamma;
+
+    if (gain > bestGain) {
+      bestGain = gain;
+      bestCut = (sorted[i].x + sorted[i+1].x) / 2;
+      bestLeft = sorted.slice(0, i + 1);
+      bestRight = sorted.slice(i + 1);
+    }
+  }
+
+  if (bestGain <= 0 || bestCut === null) {
+    return { isLeaf: true, weight: leafVal };
+  }
+
+  return {
+    isLeaf: false,
+    cut: bestCut,
+    left: buildNode(bestLeft, depth + 1, maxDepth, minChildWeight, gamma, lambda, alpha),
+    right: buildNode(bestRight, depth + 1, maxDepth, minChildWeight, gamma, lambda, alpha)
+  };
+}
+
+function predictTree(node, x) {
+  if (node.isLeaf) return node.weight;
+  return x <= node.cut ? predictTree(node.left, x) : predictTree(node.right, x);
+}
+
+function countTreeLeaves(node) {
+  if (node.isLeaf) return 1;
+  return countTreeLeaves(node.left) + countTreeLeaves(node.right);
+}
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 2: ALGORITHM 6-STAGE WALKTHROUGH
+// ─────────────────────────────────────────────────────────────
+let currentAlgoStage = 0;
+let algoAutoTimer = null;
+
+const algoStagesData = [
+  {
+    header: 'Stage 1: Base Prediction Initialization',
+    sub: 'GLOBAL OFFSET INITIALIZATION',
+    text: 'XGBoost initializes prediction $\\hat{y}_i^{(0)} = \\text{base\\_score}$ (for regression: mean target $\\bar{y} = 0.05$). All residuals are relative to this baseline.',
+    formula: 'F_0(x) = \\bar{y} = 0.05'
+  },
+  {
+    header: 'Stage 2: Gradient & Hessian Calculation',
+    sub: 'LOCAL LOSS DERIVATIVES',
+    text: 'Every training sample computes first-derivative $g_i = \\partial L/\\partial \\hat{y}$ (direction to push) and second-derivative $h_i = \\partial^2 L/\\partial \\hat{y}^2$ (curvature).',
+    formula: 'g_i = \\hat{y}_i - y_i, \\quad h_i = 1.0 \\text{ (for MSE)}'
+  },
+  {
+    header: 'Stage 3: Greedy Tree Split Finding',
+    sub: 'SIMILARITY GAIN MAXIMIZATION',
+    text: 'A decision tree structure is grown greedily by choosing split thresholds that maximize the analytical Gain: $\\frac{1}{2}[S_L + S_R - S_{root}] - \\gamma$.',
+    formula: '\\text{Gain} = \\frac{1}{2} \\left[ \\frac{G_L^2}{H_L+\\lambda} + \\frac{G_R^2}{H_R+\\lambda} - \\frac{G^2}{H+\\lambda} \\right] - \\gamma'
+  },
+  {
+    header: 'Stage 4: Optimal Leaf Weights Determination',
+    sub: 'CLOSED-FORM LEAF SCORES',
+    text: 'Without any iterative gradient descent steps, leaf weights $w_j^*$ are calculated directly in one arithmetic step using the sum of gradients and hessians.',
+    formula: 'w_j^* = - \\frac{\\sum_{i \\in I_j} g_i}{\\sum_{i \\in I_j} h_i + \\lambda}'
+  },
+  {
+    header: 'Stage 5: Shrinkage Application (Learning Rate)',
+    sub: 'VARIANCE SUPPRESSION',
+    text: 'The newly formed tree\'s leaf weights are scaled down by $\\eta$ (e.g. 0.2). This prevents the tree from dominating the ensemble and leaves room for future trees.',
+    formula: 'f_t(x) \\leftarrow \\eta \\cdot f_t(x)'
+  },
+  {
+    header: 'Stage 6: Functional Ensemble Update',
+    sub: 'UPDATE & ERROR CONTRACTION',
+    text: 'The new tree is summed into the ensemble: $F_t(x) = F_{t-1}(x) + \\eta f_t(x)$. Notice how residual error arrows noticeably contract across all data points!',
+    formula: 'F_t(x) = F_{t-1}(x) + \\eta f_t(x)'
+  }
+];
+
+function setAlgoStage(idx) {
+  currentAlgoStage = (idx + 6) % 6;
+  document.querySelectorAll('.step-indicator').forEach((el, i) => {
+    el.classList.toggle('border-accent/40', i === currentAlgoStage);
+    el.classList.toggle('bg-accent/10', i === currentAlgoStage);
+    el.classList.toggle('border-white/5', i !== currentAlgoStage);
+    el.classList.toggle('bg-surface', i !== currentAlgoStage);
+  });
+  const info = algoStagesData[currentAlgoStage];
+  document.getElementById('algoStepHeader').textContent = info.header;
+  document.getElementById('algoStageSub').textContent = info.sub;
+  document.getElementById('algoStageText').textContent = info.text;
+  document.getElementById('algoFormulaText').innerHTML = `$${info.formula}$`;
+
+  if (window.renderMathInElement) {
+    window.renderMathInElement(document.getElementById('algoExplanationBox'), {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false}
+      ],
+      throwOnError: false
+    });
+  }
+
+  drawAlgoCanvas();
+}
+
+function drawAlgoCanvas() {
+  const canvas = document.getElementById('algoCanvas');
+  const ctx = setupCanvas(canvas);
+  const W = ctx._w, H = ctx._h;
+  const pad = { t: 30, r: 30, b: 40, l: 50 };
+  const xMin = 0, xMax = 6.2, yMin = -2.0, yMax = 2.0;
+
+  ctx.clearRect(0, 0, W, H);
+  drawCanvasGrid(ctx, W, H, pad, xMin, xMax, yMin, yMax);
+
+  const mX = x => mapVal(x, xMin, xMax, pad.l, W - pad.r);
+  const mY = y => mapVal(y, yMin, yMax, H - pad.b, pad.t);
+
+  const data = CURRENT_DATA.train;
+  const yMean = data.reduce((s, d) => s + d.y, 0) / data.length;
+
+  const fitted = fitXGBoost(data, CURRENT_DATA.val, { eta: 0.35, nEstimators: 1, maxDepth: 2 });
+  const tree1 = fitted.trees[0];
+
+  const truePts = [];
+  for (let x = xMin; x <= xMax; x += 0.05) {
+    truePts.push([mX(x), mY(CURRENT_DATA.trueFn(x))]);
+  }
+  drawGlowLine(ctx, truePts, 'rgba(255,255,255,0.15)', 1.5);
+
+  for (const d of data) {
+    ctx.beginPath();
+    ctx.arc(mX(d.x), mY(d.y), 4, 0, Math.PI*2);
+    ctx.fillStyle = C.text;
+    ctx.fill();
+  }
+
+  if (currentAlgoStage === 0) {
+    const baseY = mY(yMean);
+    ctx.strokeStyle = C.gold;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(pad.l, baseY); ctx.lineTo(W - pad.r, baseY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = C.gold;
+    ctx.font = '11px "JetBrains Mono"';
+    ctx.fillText(`F_0(x) = ${yMean.toFixed(2)} (Base Score)`, pad.l + 10, baseY - 10);
+  } else if (currentAlgoStage === 1) {
+    const baseY = mY(yMean);
+    for (const d of data) {
+      const px = mX(d.x);
+      const py = mY(d.y);
+      ctx.strokeStyle = d.y > yMean ? C.mint : C.coral;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(px, baseY);
+      ctx.lineTo(px, py);
+      ctx.stroke();
+      const dir = d.y > yMean ? -1 : 1;
+      ctx.beginPath();
+      ctx.moveTo(px - 3, py + dir * 5);
+      ctx.lineTo(px, py);
+      ctx.lineTo(px + 3, py + dir * 5);
+      ctx.stroke();
+    }
+    ctx.fillStyle = C.coral;
+    ctx.font = '11px "JetBrains Mono"';
+    ctx.fillText('Residual Gradient Vectors (g_i = y_hat - y)', pad.l + 10, pad.t + 20);
+  } else if (currentAlgoStage === 2) {
+    const cutX = mX(tree1.cut || 3.1);
+    ctx.strokeStyle = C.coral;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(cutX, pad.t); ctx.lineTo(cutX, H - pad.b); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = C.coral;
+    ctx.font = '11px "JetBrains Mono"';
+    ctx.fillText(`Optimal Split Cut = ${(tree1.cut || 3.1).toFixed(2)}`, cutX + 8, pad.t + 25);
+    ctx.fillText('Left Region', cutX - 80, pad.t + 25);
+    ctx.fillText('Right Region', cutX + 10, pad.t + 45);
+  } else if (currentAlgoStage === 3) {
+    const stepPts = [];
+    for (let x = xMin; x <= xMax; x += 0.04) {
+      stepPts.push([mX(x), mY(yMean + predictTree(tree1, x))]);
+    }
+    drawGlowLine(ctx, stepPts, C.lavender, 3);
+    ctx.fillStyle = C.lavender;
+    ctx.font = '11px "JetBrains Mono"';
+    ctx.fillText('Tree Leaf Weights: w* = -G / (H + λ)', pad.l + 10, pad.t + 20);
+  } else if (currentAlgoStage === 4) {
+    const stepPts = [];
+    for (let x = xMin; x <= xMax; x += 0.04) {
+      stepPts.push([mX(x), mY(yMean + 0.35 * predictTree(tree1, x))]);
+    }
+    drawGlowLine(ctx, stepPts, C.gold, 2.5);
+    ctx.fillStyle = C.gold;
+    ctx.font = '11px "JetBrains Mono"';
+    ctx.fillText('Shrunk Tree: f_1(x) = η · w* (η = 0.35)', pad.l + 10, pad.t + 20);
+  } else if (currentAlgoStage === 5) {
+    const ensPts = [];
+    for (let x = xMin; x <= xMax; x += 0.04) {
+      ensPts.push([mX(x), mY(yMean + 0.35 * predictTree(tree1, x))]);
+    }
+    drawGlowLine(ctx, ensPts, C.accent, 3);
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+    ctx.lineWidth = 1;
+    for (const d of data) {
+      const px = mX(d.x);
+      const predY = mY(yMean + 0.35 * predictTree(tree1, d.x));
+      ctx.beginPath(); ctx.moveTo(px, mY(d.y)); ctx.lineTo(px, predY); ctx.stroke();
+    }
+    ctx.fillStyle = C.accent;
+    ctx.font = '11px "JetBrains Mono"';
+    ctx.fillText('New Ensemble F_1(x) = F_0(x) + η·f_1(x) (Residuals Contracted)', pad.l + 10, pad.t + 20);
+  }
+}
+
+document.getElementById('algoPrevBtn').addEventListener('click', () => setAlgoStage(currentAlgoStage - 1));
+document.getElementById('algoNextBtn').addEventListener('click', () => setAlgoStage(currentAlgoStage + 1));
+document.getElementById('algoAutoPlayBtn').addEventListener('click', () => {
+  if (algoAutoTimer) {
+    clearInterval(algoAutoTimer);
+    algoAutoTimer = null;
+    document.getElementById('algoAutoPlayBtn').textContent = '▶ Auto Play';
+  } else {
+    document.getElementById('algoAutoPlayBtn').textContent = '⏸ Pause';
+    algoAutoTimer = setInterval(() => setAlgoStage(currentAlgoStage + 1), 1600);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 3: 2ND-ORDER TAYLOR APPROXIMATION VISUALIZER
+// ─────────────────────────────────────────────────────────────
+(function initTaylorCanvas() {
+  const canvas = document.getElementById('taylorCanvas');
+  const slider = document.getElementById('taylorSlider');
+  const display = document.getElementById('taylorYhatDisplay');
+  const animBtn = document.getElementById('taylorAnimateBtn');
+  let autoScan = false;
+  let scanDir = 1;
+
+  function lossFn(yhat) {
+    return Math.log(1 + Math.exp(1.8 * yhat)) - 0.4 * yhat;
+  }
+  function gFn(yhat) {
+    const e = Math.exp(1.8 * yhat);
+    return (1.8 * e) / (1 + e) - 0.4;
+  }
+  function hFn(yhat) {
+    const e = Math.exp(1.8 * yhat);
+    return (1.8 * 1.8 * e) / Math.pow(1 + e, 2);
+  }
+
+  function render() {
+    const ctx = setupCanvas(canvas);
+    const W = ctx._w, H = ctx._h;
+    const pad = { t: 30, r: 30, b: 40, l: 50 };
+    const xMin = -2.2, xMax = 2.2, yMin = -0.2, yMax = 3.6;
+
+    const curYhat = parseFloat(slider.value);
+    display.textContent = curYhat.toFixed(2);
+
+    ctx.clearRect(0, 0, W, H);
+    drawCanvasGrid(ctx, W, H, pad, xMin, xMax, yMin, yMax);
+
+    const mX = x => mapVal(x, xMin, xMax, pad.l, W - pad.r);
+    const mY = y => mapVal(y, yMin, yMax, H - pad.b, pad.t);
+
+    const truePts = [];
+    for (let x = xMin; x <= xMax; x += 0.05) {
+      truePts.push([mX(x), mY(lossFn(x))]);
+    }
+    drawGlowLine(ctx, truePts, C.coral, 2.5);
+
+    const L0 = lossFn(curYhat);
+    const g0 = gFn(curYhat);
+    const h0 = hFn(curYhat);
+
+    const linPts = [];
+    for (let x = curYhat - 1.2; x <= curYhat + 1.2; x += 0.05) {
+      const yLin = L0 + g0 * (x - curYhat);
+      linPts.push([mX(x), mY(yLin)]);
+    }
+    ctx.setLineDash([5, 4]);
+    drawGlowLine(ctx, linPts, C.gold, 2);
+    ctx.setLineDash([]);
+
+    const quadPts = [];
+    for (let x = curYhat - 1.4; x <= curYhat + 1.4; x += 0.05) {
+      const yQuad = L0 + g0 * (x - curYhat) + 0.5 * h0 * Math.pow(x - curYhat, 2);
+      quadPts.push([mX(x), mY(yQuad)]);
+    }
+    drawGlowLine(ctx, quadPts, C.accent, 2.5);
+
+    const cx = mX(curYhat), cy = mY(L0);
+    ctx.beginPath();
+    ctx.arc(cx, cy, 6, 0, Math.PI*2);
+    ctx.fillStyle = C.gold;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const optX = curYhat - g0 / h0;
+    const optY = L0 + g0 * (optX - curYhat) + 0.5 * h0 * Math.pow(optX - curYhat, 2);
+    if (optX >= xMin && optX <= xMax) {
+      ctx.beginPath();
+      ctx.arc(mX(optX), mY(optY), 5, 0, Math.PI*2);
+      ctx.fillStyle = C.accent;
+      ctx.fill();
+      ctx.fillStyle = C.accent;
+      ctx.font = '10px "JetBrains Mono"';
+      ctx.fillText('Optimal Newton Step: -g/h', mX(optX) - 40, mY(optY) + 18);
+    }
+  }
+
+  slider.addEventListener('input', render);
+  animBtn.addEventListener('click', () => {
+    autoScan = !autoScan;
+    animBtn.textContent = autoScan ? '⏸ Pause Scan' : 'Auto-Scan Surface';
+    if (autoScan) {
+      const loop = () => {
+        if (!autoScan) return;
+        let v = parseFloat(slider.value) + 0.02 * scanDir;
+        if (v > 1.8) scanDir = -1;
+        if (v < -1.8) scanDir = 1;
+        slider.value = v;
+        render();
+        requestAnimationFrame(loop);
+      };
+      loop();
+    }
+  });
+
+  render();
+})();
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 4: EXACT GREEDY SPLIT FINDING & GAIN SIMULATOR
+// ─────────────────────────────────────────────────────────────
+(function initSplitFinding() {
+  const canvas = document.getElementById('splitCanvas');
+  const slider = document.getElementById('splitSlider');
+  const gammaSlider = document.getElementById('splitGammaSlider');
+  const lambdaSlider = document.getElementById('splitLambdaSlider');
+
+  const points = [
+    { x: 1.0, g: -1.8, h: 1.0 },
+    { x: 1.4, g: -1.2, h: 1.0 },
+    { x: 1.9, g: -0.9, h: 1.0 },
+    { x: 2.3, g: -0.4, h: 1.0 },
+    { x: 2.9, g: 0.8, h: 1.0 },
+    { x: 3.4, g: 1.5, h: 1.0 },
+    { x: 4.1, g: 1.9, h: 1.0 },
+    { x: 4.8, g: 2.2, h: 1.0 }
+  ];
+
+  function update() {
+    const cut = parseFloat(slider.value);
+    const gamma = parseFloat(gammaSlider.value);
+    const lambda = parseFloat(lambdaSlider.value);
+
+    document.getElementById('splitCutValue').textContent = cut.toFixed(2);
+    document.getElementById('splitGammaVal').textContent = gamma.toFixed(1);
+    document.getElementById('splitLambdaVal').textContent = lambda.toFixed(1);
+
+    const left = points.filter(p => p.x <= cut);
+    const right = points.filter(p => p.x > cut);
+
+    const G_all = points.reduce((s, p) => s + p.g, 0);
+    const H_all = points.reduce((s, p) => s + p.h, 0);
+    const GL = left.reduce((s, p) => s + p.g, 0);
+    const HL = left.reduce((s, p) => s + p.h, 0);
+    const GR = right.reduce((s, p) => s + p.g, 0);
+    const HR = right.reduce((s, p) => s + p.h, 0);
+
+    const S_root = (G_all * G_all) / (H_all + lambda);
+    const S_L = left.length ? (GL * GL) / (HL + lambda) : 0;
+    const S_R = right.length ? (GR * GR) / (HR + lambda) : 0;
+
+    const gain = 0.5 * (S_L + S_R - S_root) - gamma;
+
+    document.getElementById('simRootVal').textContent = S_root.toFixed(2);
+    document.getElementById('simLeftVal').textContent = S_L.toFixed(2);
+    document.getElementById('simRightVal').textContent = S_R.toFixed(2);
+    document.getElementById('gainScoreDisplay').textContent = (gain >= 0 ? '+' : '') + gain.toFixed(2);
+    document.getElementById('gainScoreDisplay').style.color = gain > 0 ? C.mint : C.coral;
+
+    const statusCard = document.getElementById('gainStatusCard');
+    const pruneText = document.getElementById('gainPruneText');
+    if (gain > 0) {
+      statusCard.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      pruneText.textContent = `✓ Split Approved (Gain > 0). Subtree expanded.`;
+      pruneText.style.color = C.mint;
+    } else {
+      statusCard.style.borderColor = 'rgba(244, 63, 94, 0.4)';
+      pruneText.textContent = `✗ PRUNED BY γ! Gain ≤ 0. Split discarded.`;
+      pruneText.style.color = C.coral;
+    }
+
+    renderCanvas(cut, left, right);
+  }
+
+  function renderCanvas(cut, left, right) {
+    const ctx = setupCanvas(canvas);
+    const W = ctx._w, H = ctx._h;
+    const pad = { t: 40, r: 30, b: 50, l: 40 };
+    const xMin = 0.5, xMax = 5.5;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const mX = x => mapVal(x, xMin, xMax, pad.l, W - pad.r);
+
+    ctx.strokeStyle = C.gridLine;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, H/2);
+    ctx.lineTo(W - pad.r, H/2);
+    ctx.stroke();
+
+    for (const p of points) {
+      const px = mX(p.x);
+      const isLeft = p.x <= cut;
+      const color = isLeft ? C.accent : C.lavender;
+
+      const barH = p.g * 45;
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.7;
+      ctx.fillRect(px - 6, H/2 - barH, 12, barH);
+      ctx.globalAlpha = 1;
+
+      ctx.beginPath();
+      ctx.arc(px, H/2, 5, 0, Math.PI*2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      ctx.font = '9px "JetBrains Mono"';
+      ctx.fillStyle = C.textMuted;
+      ctx.textAlign = 'center';
+      ctx.fillText(`g=${p.g.toFixed(1)}`, px, H/2 - barH - 8);
+    }
+
+    const cutX = mX(cut);
+    ctx.strokeStyle = C.coral;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(cutX, pad.t);
+    ctx.lineTo(cutX, H - pad.b);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = C.coral;
+    ctx.font = 'bold 11px "JetBrains Mono"';
+    ctx.fillText(`Split Cut C = ${cut.toFixed(2)}`, cutX, pad.t - 10);
+  }
+
+  slider.addEventListener('input', update);
+  gammaSlider.addEventListener('input', update);
+  lambdaSlider.addEventListener('input', update);
+  update();
+})();
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 5: OPTIMAL LEAF WEIGHTS (L1 vs L2)
+// ─────────────────────────────────────────────────────────────
+(function initLeafWeights() {
+  const canvas = document.getElementById('leafWeightCanvas');
+  const lambdaSlider = document.getElementById('leafLambdaSlider');
+  const alphaSlider = document.getElementById('leafAlphaSlider');
+
+  function render() {
+    const lam = parseFloat(lambdaSlider.value);
+    const alp = parseFloat(alphaSlider.value);
+    document.getElementById('leafLambdaVal').textContent = lam.toFixed(1);
+    document.getElementById('leafAlphaVal').textContent = alp.toFixed(1);
+
+    const ctx = setupCanvas(canvas);
+    const W = ctx._w, H = ctx._h;
+    const pad = { t: 30, r: 30, b: 40, l: 50 };
+    const gMin = -6.0, gMax = 6.0, wMin = -2.5, wMax = 2.5;
+
+    ctx.clearRect(0, 0, W, H);
+    drawCanvasGrid(ctx, W, H, pad, gMin, gMax, wMin, wMax);
+
+    const mX = g => mapVal(g, gMin, gMax, pad.l, W - pad.r);
+    const mY = w => mapVal(w, wMin, wMax, H - pad.b, pad.t);
+
+    const H_leaf = 3.0;
+
+    const pts = [];
+    for (let G = gMin; G <= gMax; G += 0.1) {
+      let w = 0;
+      if (Math.abs(G) > alp) {
+        const sign = G > 0 ? 1 : -1;
+        w = -sign * (Math.abs(G) - alp) / (H_leaf + lam);
+      }
+      pts.push([mX(G), mY(w)]);
+    }
+    drawGlowLine(ctx, pts, C.accent, 2.5);
+
+    if (alp > 0) {
+      const zL = mX(-alp), zR = mX(alp);
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.12)';
+      ctx.fillRect(zL, pad.t, zR - zL, H - pad.t - pad.b);
+      ctx.fillStyle = C.coral;
+      ctx.font = '10px "JetBrains Mono"';
+      ctx.textAlign = 'center';
+      ctx.fillText(`L1 Dead Zone (w* = 0)`, (zL + zR)/2, pad.t + 20);
+    }
+  }
+
+  lambdaSlider.addEventListener('input', render);
+  alphaSlider.addEventListener('input', render);
+  render();
+})();
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 6: HYPERPARAMETER MINI DEMO CANVASES
+// ─────────────────────────────────────────────────────────────
+(function initMiniDemos() {
+  const lrCanvas = document.getElementById('lrDemoCanvas');
+  const lrSlider = document.getElementById('lrDemoSlider');
+  const lrVal = document.getElementById('lrDemoVal');
+
+  function renderLr() {
+    const eta = parseFloat(lrSlider.value);
+    lrVal.textContent = eta.toFixed(2);
+    const ctx = setupCanvas(lrCanvas);
+    const W = ctx._w, H = ctx._h;
+    ctx.clearRect(0, 0, W, H);
+
+    ctx.strokeStyle = C.gold;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(20, 20);
+    for (let i = 0; i < 40; i++) {
+      const x = 20 + (i / 40) * (W - 40);
+      const decay = Math.exp(-eta * i * 0.4) + (eta > 0.6 ? 0.15 * Math.sin(i*2) : 0);
+      const y = 30 + decay * (H - 60);
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.fillStyle = C.textMuted;
+    ctx.font = '9px "JetBrains Mono"';
+    ctx.fillText(eta > 0.5 ? 'Fast but Oscillating!' : 'Smooth & Stable Convergence', 20, H - 10);
+  }
+  lrSlider.addEventListener('input', renderLr);
+  renderLr();
+
+  const dCanvas = document.getElementById('depthDemoCanvas');
+  const dSlider = document.getElementById('depthDemoSlider');
+  const dVal = document.getElementById('depthDemoVal');
+
+  function renderDepth() {
+    const depth = parseInt(dSlider.value);
+    dVal.textContent = depth;
+    const ctx = setupCanvas(dCanvas);
+    const W = ctx._w, H = ctx._h;
+    ctx.clearRect(0, 0, W, H);
+    drawMiniTree(ctx, W/2, 25, W*0.35, 30, Math.min(depth, 4), C.accent);
+    ctx.fillStyle = C.textMuted;
+    ctx.font = '9px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Max Leaf Regions: up to 2^${depth} = ${Math.pow(2, depth)}`, W/2, H - 10);
+  }
+  dSlider.addEventListener('input', renderDepth);
+  renderDepth();
+
+  const sCanvas = document.getElementById('subsampleDemoCanvas');
+  const sSlider = document.getElementById('subsampleDemoSlider');
+  const sVal = document.getElementById('subsampleDemoVal');
+
+  function renderSubsample() {
+    const ratio = parseFloat(sSlider.value);
+    sVal.textContent = ratio.toFixed(2);
+    const ctx = setupCanvas(sCanvas);
+    const W = ctx._w, H = ctx._h;
+    ctx.clearRect(0, 0, W, H);
+
+    const cols = 12, rows = 5;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = 30 + (c / (cols - 1)) * (W - 60);
+        const y = 30 + (r / (rows - 1)) * (H - 60);
+        const active = (r * cols + c) / (cols * rows) < ratio;
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI*2);
+        ctx.fillStyle = active ? C.mint : 'rgba(255,255,255,0.1)';
+        ctx.fill();
+      }
+    }
+  }
+  sSlider.addEventListener('input', renderSubsample);
+  renderSubsample();
+})();
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 7: THE MASTER WORKBENCH (FULL PLAYGROUND)
+// ─────────────────────────────────────────────────────────────
+const wbPredCanvas = document.getElementById('wbPredCanvas');
+const wbLossCanvas = document.getElementById('wbLossCanvas');
+
+function runWorkbenchSimulation() {
+  const eta = parseFloat(document.getElementById('wbEta').value);
+  const nEstimators = parseInt(document.getElementById('wbTrees').value);
+  const maxDepth = parseInt(document.getElementById('wbDepth').value);
+  const minChildWeight = parseFloat(document.getElementById('wbMinChild').value);
+  const gamma = parseFloat(document.getElementById('wbGamma').value);
+  const lambda = parseFloat(document.getElementById('wbLambda').value);
+  const alpha = parseFloat(document.getElementById('wbAlpha').value);
+  const subsample = parseFloat(document.getElementById('wbSubsample').value);
+  const earlyStopping = document.getElementById('wbEarlyStopToggle').checked;
+
+  document.getElementById('wbEtaVal').textContent = eta.toFixed(2);
+  document.getElementById('wbTreesVal').textContent = nEstimators;
+  document.getElementById('wbDepthVal').textContent = maxDepth;
+  document.getElementById('wbMinChildVal').textContent = minChildWeight.toFixed(1);
+  document.getElementById('wbGammaVal').textContent = gamma.toFixed(1);
+  document.getElementById('wbLambdaVal').textContent = lambda.toFixed(1);
+  document.getElementById('wbAlphaVal').textContent = alpha.toFixed(1);
+  document.getElementById('wbSubsampleVal').textContent = subsample.toFixed(2);
+
+  const model = fitXGBoost(CURRENT_DATA.train, CURRENT_DATA.val, {
+    eta,
+    nEstimators,
+    maxDepth,
+    minChildWeight,
+    gamma,
+    lambda,
+    alpha,
+    subsample,
+    earlyStopping,
+    patience: 8
+  });
+
+  const finalTrLoss = model.trainLosses[model.trainLosses.length - 1];
+  const finalVLoss = model.valLosses[model.valLosses.length - 1];
+  const gap = finalVLoss / (finalTrLoss + 0.0001);
+
+  document.getElementById('wbTrainMseVal').textContent = finalTrLoss.toFixed(4);
+  document.getElementById('wbValMseVal').textContent = finalVLoss.toFixed(4);
+  document.getElementById('wbGapVal').textContent = `${gap.toFixed(2)}x`;
+  document.getElementById('wbEffectiveTreesVal').textContent = `${model.trees.length} / ${nEstimators}`;
+
+  const totalLeaves = model.trees.reduce((s, t) => s + countTreeLeaves(t), 0);
+  document.getElementById('wbTotalLeavesVal').textContent = totalLeaves;
+
+  const banner = document.getElementById('wbStatusBanner');
+  const dot = document.getElementById('wbStatusDot');
+  const title = document.getElementById('wbStatusTitle');
+  const sub = document.getElementById('wbStatusSub');
+  const risk = document.getElementById('wbOverfitScore');
+
+  if (gap > 2.2 && finalTrLoss < 0.02) {
+    banner.className = 'p-4 rounded-xl border border-coral/30 bg-coral/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all';
+    dot.className = 'w-3.5 h-3.5 rounded-full bg-coral animate-ping shrink-0';
+    title.textContent = 'HIGH OVERFITTING RISK DETECTED';
+    sub.textContent = 'Validation error is diverging from training loss. Prune with gamma, lower depth, or raise lambda.';
+    risk.textContent = 'HIGH';
+    risk.style.color = C.coral;
+  } else if (finalTrLoss > 0.15 && finalVLoss > 0.15) {
+    banner.className = 'p-4 rounded-xl border border-gold/30 bg-gold/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all';
+    dot.className = 'w-3.5 h-3.5 rounded-full bg-gold shrink-0';
+    title.textContent = 'UNDERFITTING / HIGH BIAS';
+    sub.textContent = 'Model lacks capacity to fit pattern. Increase max_depth or increase n_estimators.';
+    risk.textContent = 'UNDERFIT';
+    risk.style.color = C.gold;
+  } else {
+    banner.className = 'p-4 rounded-xl border border-mint/30 bg-mint/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all';
+    dot.className = 'w-3.5 h-3.5 rounded-full bg-mint animate-pulse shrink-0';
+    title.textContent = 'HEALTHY GENERALIZATION FIT';
+    sub.textContent = 'Excellent balance: both training and validation losses are low and track tightly.';
+    risk.textContent = 'OPTIMAL';
+    risk.style.color = C.mint;
+  }
+
+  drawWbPredictions(model, eta);
+  drawWbLoss(model);
+}
+
+function drawWbPredictions(model, eta) {
+  const ctx = setupCanvas(wbPredCanvas);
+  const W = ctx._w, H = ctx._h;
+  const pad = { t: 30, r: 30, b: 40, l: 50 };
+  const xMin = 0.0, xMax = 6.2, yMin = -2.2, yMax = 2.2;
+
+  ctx.clearRect(0, 0, W, H);
+  drawCanvasGrid(ctx, W, H, pad, xMin, xMax, yMin, yMax);
+
+  const mX = x => mapVal(x, xMin, xMax, pad.l, W - pad.r);
+  const mY = y => mapVal(y, yMin, yMax, H - pad.b, pad.t);
+
+  const truePts = [];
+  for (let x = xMin; x <= xMax; x += 0.04) {
+    truePts.push([mX(x), mY(CURRENT_DATA.trueFn(x))]);
+  }
+  drawGlowLine(ctx, truePts, 'rgba(255,255,255,0.18)', 1.5);
+
+  const ensPts = [];
+  for (let x = xMin; x <= xMax; x += 0.03) {
+    let yHat = model.yMean;
+    for (const tree of model.trees) {
+      yHat += eta * predictTree(tree, x);
+    }
+    ensPts.push([mX(x), mY(yHat)]);
+  }
+  drawGlowLine(ctx, ensPts, C.gold, 2.5);
+
+  for (const d of CURRENT_DATA.train) {
+    ctx.beginPath();
+    ctx.arc(mX(d.x), mY(d.y), 4, 0, Math.PI*2);
+    ctx.fillStyle = C.accent;
+    ctx.fill();
+  }
+  for (const d of CURRENT_DATA.val) {
+    ctx.beginPath();
+    ctx.arc(mX(d.x), mY(d.y), 3.5, 0, Math.PI*2);
+    ctx.fillStyle = C.coral;
+    ctx.fill();
+  }
+}
+
+function drawWbLoss(model) {
+  const ctx = setupCanvas(wbLossCanvas);
+  const W = ctx._w, H = ctx._h;
+  const pad = { t: 25, r: 30, b: 35, l: 50 };
+  const maxIters = model.trainLosses.length;
+  const yMax = Math.min(0.6, Math.max(...model.valLosses) * 1.1);
+
+  ctx.clearRect(0, 0, W, H);
+  drawCanvasGrid(ctx, W, H, pad, 0, maxIters, 0, yMax);
+
+  const mX = i => mapVal(i, 0, maxIters - 1, pad.l, W - pad.r);
+  const mY = l => mapVal(l, 0, yMax, H - pad.b, pad.t);
+
+  const trPts = model.trainLosses.map((l, i) => [mX(i), mY(l)]);
+  drawGlowLine(ctx, trPts, C.accent, 2);
+
+  const vPts = model.valLosses.map((l, i) => [mX(i), mY(l)]);
+  drawGlowLine(ctx, vPts, C.coral, 2);
+
+  const bestX = mX(model.bestIter);
+  ctx.strokeStyle = C.mint;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(bestX, pad.t);
+  ctx.lineTo(bestX, H - pad.b);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = C.mint;
+  ctx.font = '9px "JetBrains Mono"';
+  ctx.fillText(`Best: Iter ${model.bestIter}`, bestX + 5, pad.t + 15);
+}
+
+['wbEta', 'wbTrees', 'wbDepth', 'wbMinChild', 'wbGamma', 'wbLambda', 'wbAlpha', 'wbSubsample'].forEach(id => {
+  document.getElementById(id).addEventListener('input', runWorkbenchSimulation);
+});
+document.getElementById('wbEarlyStopToggle').addEventListener('change', runWorkbenchSimulation);
+
+document.getElementById('datasetSelect').addEventListener('change', (e) => {
+  CURRENT_DATA = generateDataset(e.target.value);
+  runWorkbenchSimulation();
+});
+
+document.getElementById('wbResetBtn').addEventListener('click', () => {
+  document.getElementById('wbEta').value = 0.15;
+  document.getElementById('wbTrees').value = 35;
+  document.getElementById('wbDepth').value = 3;
+  document.getElementById('wbMinChild').value = 1.0;
+  document.getElementById('wbGamma').value = 0.0;
+  document.getElementById('wbLambda').value = 1.0;
+  document.getElementById('wbAlpha').value = 0.0;
+  document.getElementById('wbSubsample').value = 1.0;
+  runWorkbenchSimulation();
+});
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 9: CODE REFERENCE SNIPPETS
+// ─────────────────────────────────────────────────────────────
+const codeSnippets = [
+`# 1. XGBoost Native Python API (Low-level C++ DMatrix engine)
+import xgboost as xgb
+from sklearn.model_selection import train_test_split
+
+# Wrap into memory-optimized DMatrix
+dtrain = xgb.DMatrix(X_train, label=y_train)
+dval = xgb.DMatrix(X_val, label=y_val)
+
+params = {
+    'objective': 'reg:squarederror',  # or 'binary:logistic'
+    'eval_metric': ['rmse', 'mae'],
+    'learning_rate': 0.05,
+    'max_depth': 4,
+    'min_child_weight': 3.0,
+    'gamma': 1.0,          # Minimum gain to split (pruning)
+    'lambda': 2.0,         # L2 leaf weight shrinkage
+    'alpha': 0.1,          # L1 sparsity
+    'subsample': 0.8,      # Row subsampling ratio
+    'colsample_bytree': 0.8,
+    'tree_method': 'hist', # Ultra-fast weighted quantile binning
+    'device': 'cuda'       # GPU acceleration
+}
+
+evals = [(dtrain, 'train'), (dval, 'val')]
+bst = xgb.train(
+    params=params,
+    dtrain=dtrain,
+    num_boost_round=1500,
+    evals=evals,
+    early_stopping_rounds=40,
+    verbose_eval=50
+)
+
+# Predict using the best iteration identified by early stopping
+preds = bst.predict(dval, iteration_range=(0, bst.best_iteration + 1))`,
+
+`# 2. Scikit-Learn Wrapper API (XGBRegressor / XGBClassifier)
+from xgboost import XGBRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+model = XGBRegressor(
+    n_estimators=1000,
+    learning_rate=0.03,
+    max_depth=5,
+    min_child_weight=2,
+    gamma=0.5,
+    reg_lambda=1.5,
+    reg_alpha=0.0,
+    subsample=0.85,
+    colsample_bytree=0.8,
+    tree_method='hist',
+    early_stopping_rounds=30,
+    random_state=42
+)
+
+# Fit with validation evaluation for automatic early stopping
+model.fit(
+    X_train, y_train,
+    eval_set=[(X_train, y_train), (X_val, y_val)],
+    verbose=100
+)
+
+print(f"Optimal number of trees: {model.best_iteration}")
+test_preds = model.predict(X_test)`,
+
+`# 3. Modern Bayesian Hyperparameter Tuning with Optuna
+import optuna
+import xgboost as xgb
+
+def objective(trial):
+    params = {
+        'objective': 'binary:logistic',
+        'eval_metric': 'auc',
+        'tree_method': 'hist',
+        # Sample hyperparameters within recommended search spaces
+        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.2, log=True),
+        'max_depth': trial.suggest_int('max_depth', 3, 9),
+        'min_child_weight': trial.suggest_float('min_child_weight', 1.0, 10.0),
+        'gamma': trial.suggest_float('gamma', 0.0, 5.0),
+        'reg_lambda': trial.suggest_float('reg_lambda', 0.1, 20.0, log=True),
+        'reg_alpha': trial.suggest_float('reg_alpha', 1e-3, 10.0, log=True),
+        'subsample': trial.suggest_float('subsample', 0.6, 1.0),
+        'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0)
+    }
+
+    dtrain = xgb.DMatrix(X_train, label=y_train)
+    dval = xgb.DMatrix(X_val, label=y_val)
+
+    bst = xgb.train(
+        params, dtrain,
+        num_boost_round=1000,
+        evals=[(dval, 'val')],
+        early_stopping_rounds=30,
+        verbose_eval=False
+    )
+    return bst.best_score
+
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=60)`
+];
+
+function switchCodeTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  document.getElementById('codeDisplay').textContent = codeSnippets[idx];
+}
+function copyCode() {
+  const code = document.getElementById('codeDisplay').textContent;
+  navigator.clipboard.writeText(code);
+  const btn = document.getElementById('copyBtn');
+  btn.innerHTML = '<span>✓</span> Copied!';
+  setTimeout(() => btn.innerHTML = '<span>📋</span> Copy Snippet', 2000);
+}
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 10: MASTERY QUIZ (10 Rigorous DS Interview Questions)
+// ─────────────────────────────────────────────────────────────
+const quizData = [
+  {
+    q: 'Why does XGBoost use a 2nd-order Taylor expansion over 1st-order Gradient Descent?',
+    options: [
+      'It allows evaluating more split candidates per second on CPU.',
+      'It converts the loss into a local quadratic form, allowing optimal leaf weights to be computed analytically in closed form.',
+      'It guarantees that trees never overfit regardless of depth.',
+      'It is required only for classification problems where target values are discrete.'
+    ],
+    ans: 1,
+    exp: 'Because the loss is approximated by a parabola (gradient g_i and hessian h_i), taking the derivative with respect to leaf weight w and setting it to zero yields w* = -G / (H + lambda) analytically without gradient descent steps!'
+  },
+  {
+    q: 'In binary logistic regression, what does the hessian h_i = p_i(1 - p_i) mean for min_child_weight?',
+    options: [
+      'h_i is always 1, so min_child_weight simply counts the raw number of rows.',
+      'When the model is very confident (p_i ≈ 0 or 1), h_i ≈ 0. Therefore, min_child_weight prevents splits on nodes where instances are already confidently classified.',
+      'h_i represents the feature correlation coefficient.',
+      'It forces all leaves to have equal number of positive and negative samples.'
+    ],
+    ans: 1,
+    exp: 'In classification, hessian is the variance of the Bernoulli distribution p*(1-p). If a node has 10 samples that are all predicted with 99.9% probability, their sum of hessians is nearly 0, so min_child_weight prunes the split!'
+  },
+  {
+    q: 'How does gamma (γ) differ from max_depth in controlling tree complexity?',
+    options: [
+      'Gamma applies only to classification trees, while max_depth is for regression.',
+      'max_depth stops tree growth uniformly at a rigid cutoff; gamma prunes nodes post-hoc if the split Gain does not exceed γ, allowing deeper growth where signals are strong.',
+      'Gamma increases tree depth by encouraging more exploratory splits.',
+      'Gamma is identical to the learning rate eta.'
+    ],
+    ans: 1,
+    exp: 'max_depth enforces a hard structural ceiling. Gamma enforces an economic criterion: a tree can grow deep along informative branches where Gain > γ, while uninformative branches are trimmed.'
+  },
+  {
+    q: 'What is the exact mathematical effect of increasing lambda (L2 regularization)?',
+    options: [
+      'It forces leaf weights to become exactly zero.',
+      'It increases the denominator in w* = -G / (H + λ), smoothly shrinking leaf weights toward zero and reducing split Gain.',
+      'It increases the learning rate automatically.',
+      'It increases the number of trees grown.'
+    ],
+    ans: 1,
+    exp: 'Lambda appears in the denominator of both the optimal leaf weight formula and the similarity score. Higher lambda smoothly suppresses weight magnitudes and penalizes split gains.'
+  },
+  {
+    q: 'What does reg_alpha (L1 regularization) do to leaf scores?',
+    options: [
+      'It acts as soft-thresholding: if |G| ≤ alpha, the leaf score collapses to exactly zero (sparsity).',
+      'It multiplies leaf weights by 2.',
+      'It removes columns from the dataset.',
+      'It normalizes feature values between 0 and 1.'
+    ],
+    ans: 0,
+    exp: 'Just like Lasso regression, L1 regularizer alpha creates a dead zone: if the cumulative gradient magnitude is smaller than alpha, the leaf weight is zeroed out.'
+  },
+  {
+    q: 'Why do we scale each tree by a small learning rate (eta = 0.01 - 0.1)?',
+    options: [
+      'To prevent the first few trees from greedily memorizing the dataset and dominating the ensemble.',
+      'Because trees cannot output values greater than 1.0.',
+      'To make training run 10x faster on GPU.',
+      'To ensure trees are completely uncorrelated.'
+    ],
+    ans: 0,
+    exp: 'Shrinkage leaves room for subsequent trees to improve the model on different subspaces, dramatically reducing overall ensemble variance.'
+  },
+  {
+    q: 'When should you prioritize colsample_bytree over subsample?',
+    options: [
+      'Only when training on time-series datasets.',
+      'When your dataset has many correlated features or high dimensionality, as column subsampling forces diverse feature usage.',
+      'When you have fewer than 100 rows of data.',
+      'When objective is multiclass classification.'
+    ],
+    ans: 1,
+    exp: 'colsample_bytree acts like Random Forest feature bagging: it breaks the dominance of 1 or 2 overwhelmingly strong features, allowing weaker predictive features to form splits.'
+  },
+  {
+    q: 'What does XGBoost natively do when it encounters missing values during split finding?',
+    options: [
+      'It throws an exception and halts.',
+      'It imputes them with the mean or median of the feature.',
+      'It assigns all missing values to the left child, calculates Gain, then assigns them to the right child, and picks whichever direction yields the highest Gain.',
+      'It drops the rows containing missing values.'
+    ],
+    ans: 2,
+    exp: 'XGBoost has a native Sparsity-Aware Split Finding algorithm: it tries putting all missing values into the default left branch, then the default right branch, learning the optimal missing direction from data!'
+  },
+  {
+    q: 'Why does the recommended tuning sequence advise lowering learning rate LAST?',
+    options: [
+      'Because tuning tree depth and regularizers at eta=0.01 would require 5000+ trees per trial, wasting massive compute.',
+      'Because learning rate does not affect model accuracy.',
+      'Because eta must always match the number of CPU cores.',
+      'Because Scikit-Learn will throw a warning if eta is low.'
+    ],
+    ans: 0,
+    exp: 'Optimal tree depth, min_child_weight, and gamma are largely structural properties. Finding them with eta=0.15 is 10-20x faster. Once found, lowering eta and increasing trees purely scales generalization.'
+  },
+  {
+    q: 'If training loss is 0.001 but validation loss is 0.35, which action is most appropriate?',
+    options: [
+      'Increase max_depth to 12.',
+      'Increase n_estimators and disable early stopping.',
+      'Lower max_depth (e.g. to 3), increase min_child_weight, and set subsample/colsample to 0.8.',
+      'Set lambda and alpha to 0.'
+    ],
+    ans: 2,
+    exp: 'This is severe overfitting (massive generalization gap). You must restrict tree complexity (lower max_depth, increase min_child_weight) and introduce stochastic row/column bagging.'
+  }
+];
+
+function buildQuiz() {
+  const container = document.getElementById('quizContainer');
+  container.innerHTML = '';
+  quizData.forEach((item, qIdx) => {
+    const card = document.createElement('div');
+    card.className = 'canvas-card p-6';
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-4 mb-3">
+        <span class="text-xs font-mono text-accent font-bold">QUESTION ${qIdx + 1} OF 10</span>
+      </div>
+      <p class="text-sm font-semibold text-white mb-4 leading-relaxed">${item.q}</p>
+      <div class="space-y-2" id="q-opts-${qIdx}">
+        ${item.options.map((opt, oIdx) => `
+          <div onclick="selectQuizOpt(${qIdx}, ${oIdx})" class="quiz-opt p-3.5 rounded-xl cursor-pointer text-xs text-textMuted flex items-center gap-3" id="q-${qIdx}-opt-${oIdx}">
+            <span class="w-5 h-5 rounded-full border border-white/20 flex items-center justify-center text-[10px] font-mono shrink-0">${['A','B','C','D'][oIdx]}</span>
+            <span>${opt}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div id="q-exp-${qIdx}" class="mt-4 p-4 rounded-xl bg-bg/80 border border-white/5 text-xs text-textMuted hidden leading-relaxed">
+        <strong class="text-white block mb-1">Pedagogical Explanation:</strong>
+        ${item.exp}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+const userQuizAnswers = {};
+
+function selectQuizOpt(qIdx, oIdx) {
+  userQuizAnswers[qIdx] = oIdx;
+  document.querySelectorAll(`#q-opts-${qIdx} .quiz-opt`).forEach((el, i) => {
+    el.classList.toggle('selected', i === oIdx);
+  });
+}
+
+document.getElementById('quizSubmitBtn').addEventListener('click', () => {
+  let score = 0;
+  quizData.forEach((item, qIdx) => {
+    const userAns = userQuizAnswers[qIdx];
+    const expBox = document.getElementById(`q-exp-${qIdx}`);
+    expBox.classList.remove('hidden');
+
+    document.querySelectorAll(`#q-opts-${qIdx} .quiz-opt`).forEach((el, oIdx) => {
+      el.classList.remove('correct', 'wrong');
+      if (oIdx === item.ans) {
+        el.classList.add('correct');
+      } else if (userAns === oIdx) {
+        el.classList.add('wrong');
+      }
+    });
+
+    if (userAns === item.ans) score++;
+  });
+
+  const resBox = document.getElementById('quizResultBox');
+  resBox.classList.remove('hidden');
+  document.getElementById('quizScoreText').textContent = `Score: ${score} / 10`;
+  const feedback = document.getElementById('quizFeedbackText');
+  if (score >= 9) {
+    feedback.textContent = '🎉 Grandmaster Level! You have complete mastery of XGBoost mathematical mechanics.';
+    feedback.className = 'text-xs text-mint';
+  } else if (score >= 7) {
+    feedback.textContent = '👏 Excellent! Strong grasp of hyperparameters and optimization.';
+    feedback.className = 'text-xs text-gold';
+  } else {
+    feedback.textContent = '📚 Review the Taylor expansion and split-finding sections above and test again!';
+    feedback.className = 'text-xs text-coral';
+  }
+  resBox.scrollIntoView({ behavior: 'smooth' });
+});
+
+// Initialize on DOM load
+window.addEventListener('DOMContentLoaded', () => {
+  switchEvolutionTab(0);
+  setAlgoStage(0);
+  switchCodeTab(0);
+  buildQuiz();
+  runWorkbenchSimulation();
+
+  setTimeout(triggerMathRender, 350);
+});
+</script>
+</body>
+</html>
